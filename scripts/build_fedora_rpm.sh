@@ -69,6 +69,12 @@ mkdir -p "$topdir"/{SOURCES,SPECS,BUILD,RPMS,SRPMS} "$output"
 log 'Updating submodules'
 git -c submodule.fetchJobs=8 submodule update --init --recursive --depth 1
 
+# The tarball lists files from each submodule's index. An interrupted checkout
+# can leave an index with staged deletions, which would silently drop files.
+damaged=$(git submodule foreach --recursive --quiet 'git diff --quiet HEAD -- || echo "$displaypath"')
+[[ -z "$damaged" ]] ||
+  die "these submodules differ from their pinned commit: ${damaged//$'\n'/ }. After an interrupted checkout, repair each with: git -C PATH reset --hard HEAD"
+
 # The tarball loses submodule metadata, so resolve the pinned FFmpeg release
 # here; otherwise CMake would query this enclosing checkout's tags.
 git -C third-party/build-deps fetch -q --tags --depth=1 2>/dev/null || true
