@@ -29,6 +29,13 @@ systemctl() {
   case "$action" in
     show)
       unit=$1; shift
+      # Like systemd 259+: a bare template name is rejected, while an instance
+      # of a masked template reports LoadState=masked.
+      case "$unit" in
+        *@.service) printf 'Failed to get properties: Unit name %s is neither a valid invocation ID nor unit name.\n' "$unit" >&2; return 1 ;;
+      esac
+      mask_unit=$unit
+      case "$unit" in *@?*.service) mask_unit="${unit%%@*}@.service" ;; esac
       phase=$(cat "$fixture/host")
       for prop do
         key=${prop#--property=}
@@ -37,7 +44,7 @@ systemctl() {
           InvocationID) if [ -e "$fixture/new-owner" ]; then printf 'InvocationID=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n'; else printf 'InvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n'; fi ;;
           MainPID) if [ "$unit" = vibepollo.service ] && [ "$phase" = active ]; then printf 'MainPID=123\n'; else printf 'MainPID=0\n'; fi ;;
           ControlGroup) if [ "$unit" = vibepollo.service ] && [ "$phase" = active ]; then printf 'ControlGroup=/system.slice/vibepollo.service\n'; else printf 'ControlGroup=\n'; fi ;;
-          LoadState) if [ -L "$fixture/systemd/$unit" ]; then printf 'LoadState=masked\n'; else printf 'LoadState=loaded\n'; fi ;;
+          LoadState) if [ -L "$fixture/systemd/$unit" ] || [ -L "$fixture/systemd/$mask_unit" ]; then printf 'LoadState=masked\n'; else printf 'LoadState=loaded\n'; fi ;;
           ActiveState) if [ "$unit" = vibepollo.service ] && [ "$phase" = active ]; then printf 'ActiveState=active\n'; else printf 'ActiveState=inactive\n'; fi ;;
           SubState) if [ "$unit" = vibepollo.service ] && [ "$phase" = active ]; then printf 'SubState=running\n'; else printf 'SubState=dead\n'; fi ;;
           Job) printf 'Job=\n' ;;
@@ -187,7 +194,10 @@ def main(scenarios=None):
                     if scenario == 'retry_cleanup':
                         script += '[ "$status" -ne 0 ] || exit 91\nrm "$fixture/fail-cleanup"\nvibepollo_remove_or_abort\nstatus=$?\n'
                     script += 'if [ "$status" -eq 0 ]; then [ -d "$fixture/transaction" ] || exit 92; fi\nexit "$status"\n'
-                    result=subprocess.run([shell,'-c',script],env={'PATH':'/usr/bin:/bin','fixture':tmp,'scenario':scenario},capture_output=True,text=True)
+                    # Package scriptlets approach Linux's 128 KiB single-argument
+                    # limit, so run them from a file rather than `-c`.
+                    script_path=f/'scriptlet.sh';script_path.write_text(script)
+                    result=subprocess.run([shell,str(script_path)],env={'PATH':'/usr/bin:/bin','fixture':tmp,'scenario':scenario},capture_output=True,text=True)
                     expected_failure=scenario in ('default_timeout','failed_stop','cleanup_failure','early_failure','early_cancel','late_cancel','stale_record','unsafe_transaction','missing_timeout','legacy_late_cancel','real_partial_failure','real_activation_cancel','real_new_owner_cancel','real_admin_barrier_cancel')
                     assert (result.returncode != 0) == expected_failure, (context,shell,scenario,result.returncode,result.stderr)
                     assert 'command not found' not in result.stderr and 'not found' not in result.stderr, (context,shell,scenario,result.stderr)

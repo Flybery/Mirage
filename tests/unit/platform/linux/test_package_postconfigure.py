@@ -60,7 +60,10 @@ def main():
                     if context=='DEB':script+='vibepollo_machine_configured='+('1' if scenario in ('start-failure','afterstart-proof','afterstart-failed-stop') else '0')+'\n'
                     elif scenario in ('start-failure','afterstart-proof','afterstart-failed-stop'): machine.write_text('#!/bin/sh\nexit 0\n')
                     script+=tail
-                    result=subprocess.run([shell,'-c',script],env=dict(os.environ,fixture=tmp,scenario=scenario),capture_output=True,text=True,timeout=20)
+                    # The extracted %post exceeds Linux's 128 KiB single-argument
+                    # limit, so run it from a file rather than `-c`.
+                    script_path=f/'scriptlet.sh';script_path.write_text(script)
+                    result=subprocess.run([shell,str(script_path)],env=dict(os.environ,fixture=tmp,scenario=scenario),capture_output=True,text=True,timeout=20)
                     failed=scenario in ('failed-proof','start-failure','afterstart-proof','afterstart-failed-stop')
                     assert (result.returncode != 0) == failed,(context,shell,scenario,result.returncode,result.stderr)
                     assert 'not found' not in result.stderr,(context,shell,scenario,result.stderr)

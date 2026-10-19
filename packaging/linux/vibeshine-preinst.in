@@ -99,8 +99,10 @@ vibepollo_unit_is_disabled() {
 vibepollo_restore_template_is_masked() {
   vibepollo_restore_mask=$(timeout --signal=KILL 5 systemctl is-enabled \
     'vibepollo-session-restore@.service' 2>/dev/null || true)
+  # systemd 259+ rejects a bare template name in `systemctl show`; probe an
+  # instance, which reports LoadState=masked when the template is masked.
   vibepollo_restore_load=$(timeout --signal=KILL 5 systemctl show \
-    'vibepollo-session-restore@.service' --property=LoadState 2>/dev/null) || return 1
+    'vibepollo-session-restore@mask-probe.service' --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_restore_mask" in
     masked | masked-runtime) [ "$vibepollo_restore_load" = 'LoadState=masked' ] ;;
     *) return 1 ;;
