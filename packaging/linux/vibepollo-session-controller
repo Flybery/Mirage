@@ -54,9 +54,13 @@ announce() {
 }
 
 valid_user() { [[ "$1" =~ ^[a-z_][a-z0-9_-]*$ ]]; }
-# Plasma Login Manager and SDDM both start the Plasma Wayland desktop through
-# the systemd user manager, which session readiness verifies unit by unit.
-desktop_service_supported() { [[ "$1" =~ ^(plasmalogin|plasmalogin-autologin|sddm|sddm-autologin)$ ]]; }
+# Plasma Login Manager, SDDM and GDM all start the Plasma Wayland desktop
+# through the systemd user manager, which session readiness verifies unit by
+# unit. GDM is the default on Fedora Workstation, where Plasma is commonly
+# added alongside GNOME; a GNOME session from GDM never satisfies readiness.
+# GDM's own greeter is GNOME Shell, so pre-login streaming still requires
+# Plasma Login Manager.
+desktop_service_supported() { [[ "$1" =~ ^(plasmalogin|plasmalogin-autologin|sddm|sddm-autologin|gdm-password|gdm-autologin|gdm-fingerprint|gdm-smartcard)$ ]]; }
 valid_uid() { [[ "$1" =~ ^(0|[1-9][0-9]*)$ ]]; }
 valid_session_id() { [[ "$1" =~ ^[A-Za-z0-9_.-]+$ ]]; }
 valid_wayland_display() { [[ "$1" =~ ^wayland-[0-9]+$ ]]; }

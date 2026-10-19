@@ -2,15 +2,16 @@
 
 Vibepollo's Linux host is in beta. It ships as a native package for **Arch Linux and CachyOS**,
 and it is developed and tested on **CachyOS with KDE Plasma 6 on Wayland**. Other Arch-based
-distributions should work but get less testing. There is no AppImage, Flatpak, Debian, Fedora, or
-Docker build in this beta.
+distributions should work but get less testing. Fedora is experimental and installs from a locally
+built RPM; see [Vibepollo on Fedora](fedora.md). There is no AppImage, Flatpak, Debian, or Docker
+build in this beta.
 
 ## Requirements
 
 | Requirement | Detail |
 | --- | --- |
 | Distribution | Arch Linux or CachyOS, x86_64. Vibepollo is tuned for CachyOS. |
-| Desktop | KDE Plasma 6 on **Wayland**, started by **SDDM** or **Plasma Login Manager**. GNOME, other compositors, X11 sessions, and remote logins are not streamed. |
+| Desktop | KDE Plasma 6 on **Wayland**, started by **SDDM**, **Plasma Login Manager** or **GDM**. GNOME, other compositors, X11 sessions, and remote logins are not streamed. |
 | Kernel | Linux **6.16 or newer**, plus the headers for the kernel you boot (for example `linux-cachyos-headers`). The virtual-display driver is built with DKMS during installation. |
 | GPU | A GPU with a hardware **H.264** encoder. Testing has focused on NVIDIA and modern AMD GPUs; older cards may not work properly. NVIDIA uses NVENC through `nvidia-utils`; AMD needs `libva-mesa-driver`; Intel needs `intel-media-driver`. HEVC and AV1 are used when available. |
 | Pre-login streaming | NVIDIA only. AMD and Intel machines stream after you log in. |

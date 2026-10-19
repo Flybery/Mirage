@@ -677,10 +677,12 @@ done
   ((mock_list_count == 3)) || fail_test 'wedged application was not polled until the deadline'
 ) || fail_test 'wedged application cleanup regression'
 
-for supported in plasmalogin plasmalogin-autologin sddm sddm-autologin; do
+for supported in plasmalogin plasmalogin-autologin sddm sddm-autologin \
+    gdm-password gdm-autologin gdm-fingerprint gdm-smartcard; do
   desktop_service_supported "$supported" || fail_test "desktop login service $supported was rejected"
 done
-for unsupported in plasmalogin-greeter sddm-greeter gdm-password lightdm login sshd ''; do
+for unsupported in plasmalogin-greeter sddm-greeter gdm-launch-environment gdm gdm-passwordx \
+    lightdm login sshd ''; do
   if desktop_service_supported "$unsupported"; then
     fail_test "desktop login service '$unsupported' was accepted"
   fi

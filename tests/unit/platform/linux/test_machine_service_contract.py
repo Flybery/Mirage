@@ -297,8 +297,8 @@ require(host, 'profile=$home/.config/vibepollo', "canonical pairing profile disc
 require(host, 'profile=$home/.config/sunshine', "legacy pairing profile discovery")
 require(host, '"$profile/vibeshine_state.json"', "existing Vibepollo pairing profile discovery")
 require(host, '"$profile/sunshine_state.json"', "legacy pairing state discovery")
-require(controller, 'desktop_service_supported() { [[ "$1" =~ ^(plasmalogin|plasmalogin-autologin|sddm|sddm-autologin)$ ]]; }',
-        "SDDM and Plasma Login Manager desktop sessions")
+require(controller, 'desktop_service_supported() { [[ "$1" =~ ^(plasmalogin|plasmalogin-autologin|sddm|sddm-autologin|gdm-password|gdm-autologin|gdm-fingerprint|gdm-smartcard)$ ]]; }',
+        "SDDM, Plasma Login Manager and GDM-started Plasma desktop sessions")
 uinput_rules = (linux / "70-vibepollo-uinput.rules").read_text()
 for rule in (
     'KERNEL=="uinput", SUBSYSTEM=="misc", GROUP="vibepollo-uinput", MODE="0660"',

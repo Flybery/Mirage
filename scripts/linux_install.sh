@@ -1,29 +1,33 @@
 #!/usr/bin/env bash
-# Vibepollo installer for Arch Linux and CachyOS.
+# Vibepollo installer for Arch Linux, CachyOS and Fedora.
 #
 # Vibepollo's Linux beta is developed and tested on CachyOS with KDE Plasma 6
 # on Wayland. Other Arch-based distributions are supported on a best-effort
-# basis. This script:
+# basis. Fedora (KDE Plasma 6 Wayland, x86_64) uses the RPM package. This script:
 #
 #   1. checks the machine against the documented requirements,
-#   2. installs the kernel headers the virtual-display driver needs,
-#   3. installs the Vibepollo package from the signed Nonary repository, or
+#   2. on Fedora, offers RPM Fusion and the GPU's hardware-encoding drivers,
+#   3. installs the kernel headers the virtual-display driver needs,
+#   4. installs the Vibepollo package from the signed Nonary repository, or
 #      from the newest GitHub release when the repository is unavailable,
-#   4. opens the firewall (firewalld or ufw) when one is active, and
-#   5. prints whether a reboot is required and what to do next.
+#   5. opens the firewall (firewalld or ufw) when one is active, and
+#   6. prints whether a reboot is required and what to do next.
 #
 # Usage:
 #   sudo bash linux_install.sh [options]
 #
 # Options:
 #   --version VERSION     Install this exact release (for example 2.0.0).
-#   --package FILE        Install a local vibepollo-*.pkg.tar.zst instead of downloading.
+#   --package FILE        Install a local vibepollo-*.pkg.tar.zst (Arch) or
+#                         vibepollo-*.rpm (Fedora) instead of downloading.
 #   --stable              Ignore pre-releases when picking the newest GitHub release.
 #   --no-repo             Skip the signed pacman repository and use GitHub releases.
+#   --no-codecs           Fedora: do not offer RPM Fusion or GPU encoding drivers.
 #   --skip-checks         Continue past failed requirement checks (not recommended).
-#   --yes                 Answer yes to pacman prompts.
+#   --yes                 Answer yes to pacman/dnf prompts.
 #   --force-stop          Explicitly allow bounded forced shutdown during replacement.
-#   --remove              Uninstall using --package FILE as the incoming shutdown policy.
+#   --remove              Uninstall. Arch uses --package FILE as the incoming
+#                         shutdown policy; Fedora uses the installed package scripts.
 #   -h, --help            Show this help.
 #
 # Re-running the script is safe; it only installs what is missing.
@@ -72,6 +76,13 @@ package_transaction_cancel_signal=''
 package_transaction_run_id=''
 package_database_lock=/var/lib/pacman/db.lck
 remove_requested=0
+# pacman (Arch, CachyOS) or dnf (Fedora). Selected once in main().
+package_backend=''
+fedora_release=''
+dnf_confirm=()
+assume_yes=0
+install_codecs=1
+readonly RPMFUSION_MIRROR='https://mirrors.rpmfusion.org'
 
 usage() {
   sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -355,8 +366,9 @@ parse_args() {
         ;;
       --stable) allow_prerelease=0; shift ;;
       --no-repo) use_repo=0; shift ;;
+      --no-codecs) install_codecs=0; shift ;;
       --skip-checks) skip_checks=1; shift ;;
-      --yes) pacman_confirm=(--noconfirm); replacement_confirm=(--noconfirm --ask=4); shift ;;
+      --yes) pacman_confirm=(--noconfirm); replacement_confirm=(--noconfirm --ask=4); dnf_confirm=(-y); assume_yes=1; shift ;;
       --force-stop) package_force_stop=1; shift ;;
       --remove) remove_requested=1; shift ;;
       -h | --help) usage; exit 0 ;;
@@ -373,7 +385,70 @@ require_root() {
 
 require_pacman() {
   command -v pacman >/dev/null 2>&1 ||
-    die 'pacman was not found. The Linux beta ships as a native package for Arch Linux and CachyOS only.'
+    die 'Neither pacman nor dnf was found. The Linux beta ships native packages for Arch Linux, CachyOS and Fedora only.'
+}
+
+os_release_path=/etc/os-release
+ostree_marker=/run/ostree-booted
+
+os_release_field() {
+  [[ -r "$os_release_path" ]] || return 0
+  # shellcheck disable=SC1090
+  (. "$os_release_path" && printf '%s' "${!1:-}")
+}
+
+is_fedora_family() {
+  local id id_like
+  id=$(os_release_field ID)
+  id_like=$(os_release_field ID_LIKE)
+  [[ "$id" == fedora || " $id_like " == *' fedora '* ]]
+}
+
+select_package_backend() {
+  [[ -z "$package_backend" ]] || return 0
+  # Prefer pacman whenever it resolves so Arch behavior never changes.
+  if command -v pacman >/dev/null 2>&1; then
+    package_backend=pacman
+  elif command -v dnf >/dev/null 2>&1 && command -v rpm >/dev/null 2>&1 && is_fedora_family; then
+    package_backend=dnf
+  else
+    package_backend=pacman
+  fi
+}
+
+require_dnf() {
+  command -v dnf >/dev/null 2>&1 && command -v rpm >/dev/null 2>&1 ||
+    die 'dnf and rpm are required on Fedora.'
+  # rpm-ostree systems (Kinoite, Silverblue, Bazzite) cannot run the package
+  # scriptlets that create the service account, capabilities and driver.
+  [[ ! -e "$ostree_marker" ]] ||
+    die 'Fedora Atomic (rpm-ostree) desktops are not supported; use a regular Fedora KDE Plasma installation.'
+  fedora_release=$(os_release_field VERSION_ID)
+  [[ "$fedora_release" =~ ^[1-9][0-9]*$ ]] || die 'could not determine the Fedora release from /etc/os-release'
+}
+
+package_installed() {
+  if [[ "$package_backend" == dnf ]]; then
+    rpm -q --quiet "$1" 2>/dev/null
+  else
+    pacman -Qq "$1" >/dev/null 2>&1
+  fi
+}
+
+package_install() {
+  if [[ "$package_backend" == dnf ]]; then
+    dnf install "${dnf_confirm[@]}" "$@"
+  else
+    pacman -S --needed "${pacman_confirm[@]}" "$@"
+  fi
+}
+
+confirm() {
+  local answer
+  ((assume_yes)) && return 0
+  [[ -t 0 ]] || return 1
+  read -r -p "$1 [y/N] " answer || return 1
+  [[ "$answer" =~ ^(y|Y|yes|YES)$ ]]
 }
 
 check_distribution() {
@@ -391,9 +466,14 @@ check_distribution() {
     arch)
       ok "Arch Linux detected. Vibepollo is optimized for CachyOS; Arch is supported on a best-effort basis."
       ;;
+    fedora)
+      ok "Fedora ${fedora_release} detected. Fedora uses the RPM package with the KDE Plasma Wayland desktop."
+      ;;
     *)
       if [[ " $id_like " == *' arch '* ]]; then
         warn "${name:-$id} is an Arch derivative. Vibepollo is tested on CachyOS; expect rough edges here."
+      elif [[ " $id_like " == *' fedora '* ]]; then
+        warn "${name:-$id} is a Fedora derivative. Vibepollo targets Fedora KDE Plasma; expect rough edges here."
       else
         warn "${name:-unknown distribution} is not Arch-based. Continuing because pacman exists, but this is untested."
       fi
@@ -410,6 +490,17 @@ headers_package=''
 
 kernel_package_for() {
   local release=$1 modules_root=${2:-/usr/lib/modules} path owner
+  if [[ "$package_backend" == dnf ]]; then
+    # Fedora kernels own /usr/lib/modules/RELEASE/vmlinuz through their -core
+    # subpackage (kernel-core, kernel-cachyos-core, ...).
+    path="$modules_root/$release/vmlinuz"
+    if owner=$(rpm -qf --queryformat '%{NAME}\n' -- "$path" 2>/dev/null) &&
+       [[ "$owner" != *$'\n'* && "$owner" =~ ^[A-Za-z0-9@._+-]+$ ]]; then
+      printf '%s\n' "$owner"
+      return 0
+    fi
+    return 1
+  fi
   # Some kernel packages move the image to /boot. Ask pacman about other
   # kernel-owned metadata instead of guessing a package from uname's suffix.
   for path in "$modules_root/$release/vmlinuz" "$modules_root/$release/pkgbase"; do
@@ -456,10 +547,17 @@ check_kernel() {
 
   check_retired_kernel "$modules_root"
   if kernel_package=$(kernel_package_for "$kernel_release" "$modules_root"); then
-    headers_package="${kernel_package}-headers"
+    if [[ "$package_backend" == dnf ]]; then
+      # The exact NEVRA of the matching -devel package equals the release
+      # suffix of `uname -r` (VERSION-RELEASE.ARCH) for Fedora kernels; debug
+      # kernels append +debug to the release but not to the package NEVRA.
+      headers_package="${kernel_package%-core}-devel-${kernel_release%%+*}"
+    else
+      headers_package="${kernel_package}-headers"
+    fi
     ok "Running kernel package: ${kernel_package} (headers: ${headers_package})"
   else
-    warn "could not map the running kernel to a pacman package; you may need to install its headers manually."
+    warn "could not map the running kernel to a ${package_backend:-pacman} package; you may need to install its headers manually."
   fi
 }
 
@@ -474,7 +572,14 @@ install_kernel_headers() {
     die "Kernel headers for ${kernel_release} are missing and the package name could not be determined. Install matching headers before retrying."
   fi
   log "Installing ${headers_package} so DKMS can build the virtual-display driver"
-  pacman -S --needed "${pacman_confirm[@]}" "$headers_package"
+  if [[ "$package_backend" == dnf ]]; then
+    # Fedora mirrors keep only the newest kernel-devel. An older running kernel
+    # (an update installed without a reboot) has no matching headers to fetch.
+    package_install "$headers_package" ||
+      die "${headers_package} is not available from the enabled repositories. Fedora only publishes headers for its newest kernel: install updates (sudo dnf upgrade --refresh), reboot into the newest kernel, then retry."
+  else
+    pacman -S --needed "${pacman_confirm[@]}" "$headers_package"
+  fi
   if [[ -f "${build_dir}/Makefile" ]]; then
     ok "Kernel headers installed."
   else
@@ -483,15 +588,19 @@ install_kernel_headers() {
 }
 
 check_desktop() {
-  if pacman -Qq plasma-workspace >/dev/null 2>&1 || pacman -Qq plasma-desktop >/dev/null 2>&1; then
+  local plasma_hint='install plasma-meta or plasma-desktop'
+  [[ "$package_backend" != dnf ]] || plasma_hint="install it with: sudo dnf group install kde-desktop"
+  if package_installed plasma-workspace || package_installed plasma-desktop; then
     ok "KDE Plasma is installed."
   else
-    fail "KDE Plasma is not installed. Vibepollo streams only a KDE Plasma 6 Wayland desktop (install plasma-meta or plasma-desktop)."
+    fail "KDE Plasma is not installed. Vibepollo streams only a KDE Plasma 6 Wayland desktop (${plasma_hint})."
   fi
-  if pacman -Qq sddm >/dev/null 2>&1 || pacman -Qq plasma-login-manager >/dev/null 2>&1; then
+  if package_installed sddm || package_installed plasma-login-manager; then
     ok "A supported login manager (SDDM or Plasma Login Manager) is installed."
+  elif package_installed gdm; then
+    ok "GDM is installed. Choose the Plasma (Wayland) session at login; the GNOME login screen itself is not streamed."
   else
-    warn "Neither sddm nor plasma-login-manager is installed. Vibepollo only attaches to Plasma sessions started by one of them."
+    warn "None of sddm, plasma-login-manager or gdm is installed. Vibepollo only attaches to Plasma sessions started by one of them."
   fi
   if [[ -x /usr/bin/kwin_wayland ]]; then
     ok "KWin Wayland is available."
@@ -499,6 +608,16 @@ check_desktop() {
     fail "/usr/bin/kwin_wayland is missing; the Plasma Wayland session is required."
   fi
 }
+
+gpu_nvidia=0
+gpu_amd=0
+gpu_intel=0
+
+# Fedora's own Mesa and Intel media drivers omit patent-encumbered H.264/HEVC
+# encoding. RPM Fusion ships the complete drivers under these names.
+fedora_amd_codec_package=mesa-va-drivers-freeworld
+fedora_intel_codec_package=intel-media-driver
+fedora_nvidia_codec_package=xorg-x11-drv-nvidia-cuda-libs
 
 check_gpu() {
   local nvidia=0 amd=0 intel=0 line
@@ -512,10 +631,13 @@ check_gpu() {
     done < <(lspci -nn 2>/dev/null | grep -Ei 'vga|3d|display' || true)
   fi
   [[ -d /sys/module/nvidia ]] && nvidia=1
+  gpu_nvidia=$nvidia; gpu_amd=$amd; gpu_intel=$intel
 
   if ((nvidia)); then
     if [[ -d /sys/module/nvidia ]]; then
       ok "NVIDIA GPU with the proprietary driver loaded (NVENC and pre-login streaming supported)."
+    elif [[ "$package_backend" == dnf ]]; then
+      warn "NVIDIA GPU detected but the nvidia kernel module is not loaded. Install akmod-nvidia from RPM Fusion, wait for the module to build, and reboot before streaming."
     else
       warn "NVIDIA GPU detected but the nvidia kernel module is not loaded. Install nvidia-utils and the matching driver package before streaming."
     fi
@@ -523,17 +645,28 @@ check_gpu() {
        [[ "$(cat /sys/module/nvidia_drm/parameters/modeset)" != Y ]]; then
       warn "nvidia_drm.modeset is disabled. Plasma Wayland and KMS capture need nvidia_drm.modeset=1 on the kernel command line."
     fi
+    if [[ "$package_backend" == dnf ]] && ! package_installed "$fedora_nvidia_codec_package"; then
+      warn "NVIDIA GPU detected without ${fedora_nvidia_codec_package} (RPM Fusion); NVENC needs its libnvidia-encode and libcuda libraries."
+    fi
   fi
   if ((amd)); then
-    if pacman -Qq libva-mesa-driver >/dev/null 2>&1; then
+    if [[ "$package_backend" == dnf ]]; then
+      if package_installed "$fedora_amd_codec_package"; then
+        ok "AMD GPU with ${fedora_amd_codec_package} (VAAPI H.264/HEVC encoding)."
+      else
+        warn "AMD GPU detected without ${fedora_amd_codec_package} (RPM Fusion); Fedora's mesa-va-drivers cannot encode H.264/HEVC."
+      fi
+    elif pacman -Qq libva-mesa-driver >/dev/null 2>&1; then
       ok "AMD GPU with libva-mesa-driver (VAAPI encoding)."
     else
       warn "AMD GPU detected without libva-mesa-driver; install it for hardware H.264/HEVC encoding."
     fi
   fi
   if ((intel)) && ! ((nvidia)) && ! ((amd)); then
-    if pacman -Qq intel-media-driver >/dev/null 2>&1; then
+    if package_installed intel-media-driver; then
       ok "Intel GPU with intel-media-driver (VAAPI encoding)."
+    elif [[ "$package_backend" == dnf ]]; then
+      warn "Intel GPU detected without ${fedora_intel_codec_package} (RPM Fusion); Fedora's libva-intel-media-driver lacks full H.264/HEVC encoding."
     else
       warn "Intel GPU detected without intel-media-driver; install it for hardware encoding."
     fi
@@ -556,6 +689,77 @@ check_secure_boot() {
   fi
 }
 
+check_selinux() {
+  [[ "$package_backend" == dnf ]] || return 0
+  command -v getenforce >/dev/null 2>&1 || return 0
+  if [[ "$(getenforce 2>/dev/null)" == Enforcing ]]; then
+    ok "SELinux is enforcing. If streaming fails, check for denials with: sudo ausearch -m avc -ts boot"
+  fi
+}
+
+rpmfusion_installed() {
+  package_installed rpmfusion-free-release && package_installed rpmfusion-nonfree-release
+}
+
+enable_rpmfusion() {
+  rpmfusion_installed && return 0
+  if ! confirm 'Enable the RPM Fusion free and nonfree repositories for hardware H.264/HEVC encoding drivers?'; then
+    warn "RPM Fusion was not enabled; hardware H.264/HEVC encoding may be unavailable. See https://rpmfusion.org/Configuration"
+    return 1
+  fi
+  log 'Enabling RPM Fusion (free and nonfree)'
+  package_install \
+    "${RPMFUSION_MIRROR}/free/fedora/rpmfusion-free-release-${fedora_release}.noarch.rpm" \
+    "${RPMFUSION_MIRROR}/nonfree/fedora/rpmfusion-nonfree-release-${fedora_release}.noarch.rpm" ||
+    { warn 'Could not enable RPM Fusion; continuing without hardware encoding drivers.'; return 1; }
+}
+
+# Replace a Fedora package by its RPM Fusion counterpart, or install the
+# counterpart when the Fedora package is absent.
+swap_or_install() {
+  local fedora_package=$1 replacement=$2
+  package_installed "$replacement" && return 0
+  if package_installed "$fedora_package"; then
+    dnf swap "${dnf_confirm[@]}" --allowerasing "$fedora_package" "$replacement"
+  else
+    package_install "$replacement"
+  fi
+}
+
+install_gpu_codecs() {
+  [[ "$package_backend" == dnf ]] || return 0
+  ((install_codecs)) || return 0
+  local -a missing=()
+  if ((gpu_amd)) && ! package_installed "$fedora_amd_codec_package"; then missing+=(amd); fi
+  if ((gpu_intel)) && ! ((gpu_nvidia || gpu_amd)) && ! package_installed "$fedora_intel_codec_package"; then missing+=(intel); fi
+  if ((gpu_nvidia)) && [[ -d /sys/module/nvidia ]] && ! package_installed "$fedora_nvidia_codec_package"; then missing+=(nvidia); fi
+  ((${#missing[@]} > 0)) || return 0
+  enable_rpmfusion || return 0
+  local vendor
+  for vendor in "${missing[@]}"; do
+    case "$vendor" in
+      amd)
+        log "Installing ${fedora_amd_codec_package} for AMD hardware encoding"
+        swap_or_install mesa-va-drivers "$fedora_amd_codec_package" &&
+          ok "${fedora_amd_codec_package} installed." ||
+          warn "Could not install ${fedora_amd_codec_package}; run: sudo dnf swap mesa-va-drivers ${fedora_amd_codec_package} --allowerasing"
+        ;;
+      intel)
+        log "Installing ${fedora_intel_codec_package} for Intel hardware encoding"
+        swap_or_install libva-intel-media-driver "$fedora_intel_codec_package" &&
+          ok "${fedora_intel_codec_package} installed." ||
+          warn "Could not install ${fedora_intel_codec_package}; run: sudo dnf swap libva-intel-media-driver ${fedora_intel_codec_package} --allowerasing"
+        ;;
+      nvidia)
+        log "Installing ${fedora_nvidia_codec_package} for NVENC"
+        package_install "$fedora_nvidia_codec_package" &&
+          ok "${fedora_nvidia_codec_package} installed." ||
+          warn "Could not install ${fedora_nvidia_codec_package}; NVENC will be unavailable."
+        ;;
+    esac
+  done
+}
+
 run_checks() {
   log 'Checking this machine against the Vibepollo Linux requirements'
   check_distribution
@@ -563,6 +767,7 @@ run_checks() {
   check_desktop
   check_gpu
   check_secure_boot
+  check_selinux
   if ((check_failures > 0)); then
     if ((skip_checks)); then
       warn "${check_failures} requirement check(s) failed; continuing because --skip-checks was given."
@@ -904,8 +1109,77 @@ install_from_package() {
     "${package_hook_args[@]}" -- "$package_path"
 }
 
+download_release_rpm() {
+  local releases tag asset_url asset_name selector pattern
+  log 'Looking up the newest Vibepollo Fedora release on GitHub'
+  command -v curl >/dev/null 2>&1 || die 'curl is required to download the release'
+  command -v jq >/dev/null 2>&1 || package_install jq
+  if [[ -n "$requested_version" ]]; then
+    releases=$(curl -fsSL --max-time 60 -H 'Accept: application/vnd.github+json' \
+      "${API_URL}/releases/tags/${requested_version}") ||
+      die "release ${requested_version} was not found at ${REPO_URL}/releases"
+    releases="[${releases}]"
+  else
+    releases=$(curl -fsSL --max-time 60 -H 'Accept: application/vnd.github+json' \
+      "${API_URL}/releases?per_page=30") || die 'could not query GitHub releases'
+  fi
+  if ((allow_prerelease)); then
+    selector='.[] | select(.draft == false)'
+  else
+    selector='.[] | select(.draft == false and .prerelease == false)'
+  fi
+  pattern="^vibepollo-.*\\.fc${fedora_release}\\.x86_64\\.rpm\$"
+  read -r tag asset_name asset_url < <(jq -r --arg pattern "$pattern" "
+    [${selector} | . as \$r | .assets[]
+      | select(.name | test(\$pattern))
+      | select(.name | test(\"debug\") | not)
+      | [\$r.tag_name, .name, .browser_download_url] | @tsv] | first // empty" <<<"$releases")
+  [[ -n "${asset_url:-}" ]] ||
+    die "no release with a Fedora ${fedora_release} RPM was found (see ${REPO_URL}/releases). Build one locally (docs/linux/fedora.md) and pass --package FILE."
+  log "Downloading ${asset_name} from release ${tag}"
+  local_package="${workdir}/${asset_name}"
+  curl -fL --progress-bar --max-time 900 -o "$local_package" "$asset_url"
+  local sums checksum_expected checksum_actual
+  sums=$(curl -fsSL --max-time 60 "${REPO_URL}/releases/download/${tag}/SHA256SUMS" 2>/dev/null || true)
+  if [[ -n "$sums" ]]; then
+    checksum_expected=$(awk -v name="$asset_name" '$2 == name {print $1}' <<<"$sums")
+    [[ "$checksum_expected" =~ ^[0-9a-f]{64}$ ]] || die "missing or ambiguous checksum for ${asset_name}"
+    checksum_actual=$(sha256sum "$local_package" | awk '{print $1}')
+    [[ "$checksum_actual" == "$checksum_expected" ]] || die "checksum mismatch for ${asset_name}; refusing to install"
+    ok "Package checksum matches SHA256SUMS."
+  fi
+}
+
+install_from_rpm() {
+  [[ -f "$local_package" ]] || die "package file not found: ${local_package}"
+  local identity installed package_path
+  identity=$(rpm -qp --queryformat '%{NAME} %{VERSION}-%{RELEASE}.%{ARCH}\n' -- "$local_package" 2>/dev/null) ||
+    die 'could not inspect the local package'
+  [[ "$identity" == 'vibepollo '* && "$identity" != *$'\n'* ]] || die 'local package is not Vibepollo'
+  package_path=$(readlink -f -- "$local_package") || die 'cannot resolve the local package path'
+  local -a dnf_args=("${dnf_confirm[@]}")
+  # Upstream Sunshine RPMs install the same udev rules and binaries.
+  if package_installed sunshine; then
+    warn 'The Sunshine package will be replaced by Vibepollo; your Sunshine configuration stays in your home directory.'
+    dnf_args+=(--allowerasing)
+  fi
+  installed=$(rpm -q --queryformat '%{NAME} %{VERSION}-%{RELEASE}.%{ARCH}\n' vibepollo 2>/dev/null || true)
+  log "Installing ${local_package##*/} with dnf"
+  # The RPM scriptlets quiesce the running host before replacing files.
+  if [[ "$installed" == "$identity" ]]; then
+    run_from_root dnf reinstall "${dnf_args[@]}" "$package_path"
+  else
+    run_from_root dnf install "${dnf_args[@]}" "$package_path"
+  fi
+}
+
 install_vibepollo() {
   workdir=$(mktemp -d /tmp/vibepollo-installer.XXXXXXXX)
+  if [[ "$package_backend" == dnf ]]; then
+    [[ -n "$local_package" ]] || download_release_rpm
+    install_from_rpm
+    return
+  fi
   if [[ -n "$local_package" ]]; then
     install_from_package
     return
@@ -922,6 +1196,13 @@ install_vibepollo() {
 }
 
 remove_vibepollo() {
+  if [[ "$package_backend" == dnf ]]; then
+    package_installed vibepollo || { ok 'Vibepollo is not installed.'; return 0; }
+    log 'Removing Vibepollo with dnf; the package scripts stop the host first'
+    run_from_root dnf remove "${dnf_confirm[@]}" vibepollo || return $?
+    ok 'Vibepollo was removed; existing machine profile data is preserved.'
+    return 0
+  fi
   [[ -n "$local_package" && -f "$local_package" ]] ||
     die '--remove requires --package FILE containing the incoming shutdown policy'
   local identity
@@ -1015,7 +1296,13 @@ check_driver_state() {
 check_session_restart() {
   # First installation adds KWin startup hooks. A running greeter/desktop
   # predates those hooks even when the newly installed DRM module loads.
-  if ! pacman -Q vibepollo >/dev/null 2>&1; then
+  local installed=1
+  if [[ "$package_backend" == dnf ]]; then
+    package_installed vibepollo || installed=0
+  else
+    pacman -Q vibepollo >/dev/null 2>&1 || installed=0
+  fi
+  if ((installed == 0)); then
     reboot_required=1
     warn 'First installation requires a reboot so the login screen and desktop load the Vibepollo display and session integration.'
   fi
@@ -1118,12 +1405,14 @@ check_private_host_security() {
 main() {
   parse_args "$@"
   require_root
-  require_pacman
+  select_package_backend
+  if [[ "$package_backend" == dnf ]]; then require_dnf; else require_pacman; fi
   if ((remove_requested)); then
     remove_vibepollo
     return
   fi
   run_checks
+  install_gpu_codecs
   install_kernel_headers
   check_session_restart
   install_vibepollo

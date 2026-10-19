@@ -87,6 +87,9 @@ TEST(PipewireFormat, CanOmitOptionalMaximumForGamescope) {
 }
 
 TEST(PipewireFormat, ZeroOnlyMaximumReproducesKwinNegotiationFailure) {
+  if (pipewire::clamps_consumer_framerate_default) {
+    GTEST_SKIP() << "PipeWire before 1.6 accepts a zero-only maximum against KWin's range";
+  }
   format_pod_t producer;
   producer.add_producer_rates(1, 119);
   format_pod_t consumer;

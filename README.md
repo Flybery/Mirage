@@ -88,8 +88,9 @@ The script checks the requirements, installs the kernel headers and the package,
 and prints whether a reboot is needed. Reboot after the first installation, and approve Secure Boot
 key enrollment if prompted. Updates come through a signed pacman repository with a DKMS display
 driver. Manual steps, verification, and troubleshooting are in the
-[Linux install guide](docs/linux/install.md). AppImage, Flatpak, Debian, Fedora, and Docker builds
-are not part of this beta.
+[Linux install guide](docs/linux/install.md). Fedora KDE Plasma is experimental and installs from
+a locally built RPM; see [Vibepollo on Fedora](docs/linux/fedora.md). AppImage, Flatpak, Debian,
+and Docker builds are not part of this beta.
 
 SteamOS development uses a separate [user bundle](packaging/linux/steamos/README.md)
 which leaves the read-only operating system untouched. Its experimental Gaming

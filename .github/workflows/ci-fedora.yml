@@ -1,0 +1,84 @@
+---
+name: CI-Fedora
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Package version, for example 2.0.2
+        required: true
+        type: string
+        default: 2.0.2
+  workflow_call:
+    inputs:
+      release_version:
+        required: true
+        type: string
+
+jobs:
+  build_fedora:
+    name: Fedora ${{ matrix.fedora }}
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: ["43", "44"]
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:${{ matrix.fedora }}
+    env:
+      BUILD_VERSION: ${{ inputs.release_version }}
+    steps:
+      - name: Install checkout prerequisites
+        run: dnf -y install git rpm-build dnf-plugins-core bsdtar python3 procps-ng util-linux glibc-langpack-en systemd jq
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Fedora installer and session-controller tests
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          bash tests/unit/platform/linux/test_linux_installer_fedora.sh
+          bash tests/unit/platform/linux/test_session_controller.sh packaging/linux/vibepollo-session-controller
+          python3 tests/unit/platform/linux/test_machine_service_contract.py .
+
+      - name: Build the RPM (without CUDA)
+        shell: bash
+        run: |
+          git config --global --add safe.directory '*'
+          scripts/build_fedora_rpm.sh --version "$BUILD_VERSION" --install-deps --without-cuda --jobs 4
+
+      - name: Check the RPM contract
+        shell: bash
+        run: |
+          rpm_file=$(ls build/rpm/vibepollo-*.x86_64.rpm | grep -v debug | head -n1)
+          files=$(rpm -qlp "$rpm_file")
+          for required in \
+            /usr/bin/vibepollo \
+            /usr/libexec/vibeshine/vibepollo-session-controller \
+            /usr/libexec/vibeshine/vibepollo-session-broker \
+            /usr/libexec/vibeshine/vibepollo-host \
+            /usr/libexec/vibeshine/vibepollo-machine-host \
+            /usr/libexec/vibeshine/vibeshine-drm-install \
+            /usr/lib/systemd/system/vibepollo.service \
+            /usr/lib/systemd/system/vibepollo-session-controller.service \
+            /usr/lib/systemd/system/vibepollo-session-exec.socket \
+            /usr/lib/firewalld/services/vibepollo.xml; do
+            grep -Fxq "$required" <<<"$files" || { echo "missing $required"; exit 1; }
+          done
+          ! grep -E 'libalpm|arch-package-hooks|vibepollo-package-preflight' <<<"$files"
+          rpm -qp --requires "$rpm_file" | grep -Fx dkms
+          rpm -qp --requires "$rpm_file" | grep -Fx mokutil
+
+      - name: Upload RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibepollo-fedora-${{ matrix.fedora }}
+          path: build/rpm/*.rpm
+          retention-days: 7

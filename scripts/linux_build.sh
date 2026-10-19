@@ -416,7 +416,9 @@ function add_fedora_deps() {
     "gcc${gcc_version}-c++"
     "git"
     "graphviz"
-    "libappindicator-gtk3-devel"
+    "glib2-devel"
+    "kwin-devel"  # native KWin GPU bridge
+    "libayatana-appindicator-gtk3-devel"
     "libappstream-glib"
     "libcap-devel"
     "libcurl-devel"
@@ -431,10 +433,16 @@ function add_fedora_deps() {
     "libXinerama-devel"  # X11
     "libXrandr-devel"  # X11
     "libXtst-devel"  # X11
+    "libgudev-devel"
+    "libjpeg-turbo-devel"  # Steam/Lutris cover conversion
+    "libpng-devel"  # Steam/Lutris cover conversion
+    "libwebp-devel"  # Steam/Lutris cover conversion
     "mesa-libGL-devel"
     "mesa-libgbm-devel"
     "miniupnpc-devel"
     "ninja-build"
+    "nodejs"  # web UI
+    "npm"  # web UI
     "numactl-devel"
     "openssl-devel"
     "opus-devel"
@@ -442,8 +450,14 @@ function add_fedora_deps() {
     "pulseaudio-libs-devel"
     "python3-jinja2"  # glad OpenGL/EGL loader generator
     "python3-setuptools"  # glad OpenGL/EGL loader generated, v2.0.0
+    "qt6-qtbase-devel"  # native KWin GPU bridge
     "rpm-build"  # if you want to build an RPM binary package
+    "sqlite-devel"
+    "systemd-devel"
+    "vulkan-headers"
     "vulkan-loader-devel"
+    "wayland-devel"
+    "wayland-protocols-devel"
     "glslc"
     "wget"  # necessary for cuda install with `run` file
     "which"  # necessary for cuda install with `run` file
@@ -827,13 +841,13 @@ elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=44$' /etc/os-
   version="44"
   package_update_command="${sudo_cmd} dnf update -y"
   package_install_command="${sudo_cmd} dnf install -y"
-  gcc_version="14"
+  gcc_version="15"  # Fedora 44 no longer ships gcc14
 elif grep -q '^ID=fedora$' /etc/os-release && grep -q '^VERSION_ID=45$' /etc/os-release; then
   distro="fedora"
   version="45"
   package_update_command="${sudo_cmd} dnf update -y"
   package_install_command="${sudo_cmd} dnf install -y"
-  gcc_version="14"
+  gcc_version="15"
 elif grep -q "Ubuntu 22.04" /etc/os-release; then
   distro="ubuntu"
   version="22.04"

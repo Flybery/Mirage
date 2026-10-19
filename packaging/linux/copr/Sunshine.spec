@@ -13,6 +13,10 @@
 
 %undefine _hardened_build
 
+# CUDA (NVENC/NvFBC GPU-resident capture) is on by default. Builds for AMD or
+# Intel hosts can skip the CUDA download with: rpmbuild --without cuda
+%bcond_without cuda
+
 # Define _metainfodir for OpenSUSE if not already defined
 %if 0%{?suse_version}
 %if !0%{?_metainfodir:1}
@@ -30,6 +34,7 @@ Source0: tarball.tar.gz
 
 # Common BuildRequires
 BuildRequires: cmake >= 3.25.0
+BuildRequires: ninja-build
 BuildRequires: desktop-file-utils
 BuildRequires: git
 BuildRequires: libcap-devel
@@ -57,20 +62,36 @@ BuildRequires: which
 # Fedora-specific BuildRequires
 BuildRequires: appstream
 # BuildRequires: boost-devel >= 1.86.0
+BuildRequires: glib2-devel
 BuildRequires: glslc
 BuildRequires: libappstream-glib
+BuildRequires: vulkan-headers
 BuildRequires: vulkan-loader-devel
 BuildRequires: libayatana-appindicator3-devel
-BuildRequires: libgudev
+BuildRequires: libgudev-devel
+# Steam/Lutris cover conversion (JPEG/WebP to PNG); without them CMake falls
+# back to the bundled FFmpeg, which lacks these decoders.
+BuildRequires: libjpeg-turbo-devel
+BuildRequires: libpng-devel
+BuildRequires: libwebp-devel
+# Public allocator API for the native KWin GPU bridge (virtual displays).
+BuildRequires: kwin-devel
+BuildRequires: qt6-qtbase-devel
 BuildRequires: mesa-libGL-devel
 BuildRequires: mesa-libgbm-devel
 BuildRequires: miniupnpc-devel
+BuildRequires: nodejs
+BuildRequires: npm
 BuildRequires: numactl-devel
 BuildRequires: opus-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: python3-jinja2
 BuildRequires: python3-setuptools
+BuildRequires: sqlite-devel
+BuildRequires: systemd-devel
 BuildRequires: systemd-udev
+BuildRequires: wayland-devel
+BuildRequires: wayland-protocols-devel
 %{?sysusers_requires_compat}
 %endif
 
@@ -113,9 +134,12 @@ BuildRequires: gcc14-c++
 %global cuda_version 12.9.1
 %global cuda_build 575.57.08
 %elif 0%{?fedora} >= 44
-BuildRequires: gcc14
-BuildRequires: gcc14-c++
-%global gcc_version 14
+# Fedora 44 dropped the gcc14 compatibility package; gcc15 is the oldest
+# compiler available. CUDA 12.9 officially supports host GCC up to 14, so
+# CUDA builds pass -allow-unsupported-compiler (see %%build).
+BuildRequires: gcc15
+BuildRequires: gcc15-c++
+%global gcc_version 15
 %global cuda_version 12.9.1
 %global cuda_build 575.57.08
 %endif
@@ -161,6 +185,12 @@ Recommends: make
 
 %if 0%{?fedora}
 # Fedora runtime requirements
+# Match the Arch package: the virtual-display driver is built with DKMS and
+# Secure Boot key enrollment goes through mokutil.
+Requires: dkms
+Requires: mokutil
+# The KWin session-environment helper publishes DISPLAY/XAUTHORITY with this.
+Requires: /usr/bin/dbus-update-activation-environment
 Requires: python3 >= 3.9
 Requires: libayatana-appindicator3 >= 0.5.3
 Requires: libcap >= 2.22
@@ -224,7 +254,9 @@ cuda_supported_architectures=("x86_64" "aarch64")
 # prepare CMAKE args
 cmake_args=(
   "-B=%{_builddir}/Sunshine/build"
-  "-G=Unix Makefiles"
+  # Ninja, like the Arch package: the web UI target depends on custom-command
+  # byproducts, which the Makefile generator does not provide rules for.
+  "-G=Ninja"
   "-S=."
   "-DBUILD_DOCS=OFF"
   "-DBUILD_TESTS=ON"
@@ -242,6 +274,11 @@ cmake_args=(
   "-DSUNSHINE_PUBLISHER_WEBSITE=https://github.com/Nonary/Vibepollo"
   "-DSUNSHINE_PUBLISHER_ISSUE_URL=https://github.com/Nonary/Vibepollo/issues"
 )
+# The tarball has no submodule metadata; pin the build-deps FFmpeg release
+# with: rpmbuild --define "ffmpeg_release_tag vYYYY.DDD.NNNNN"
+%if 0%{?ffmpeg_release_tag:1}
+cmake_args+=("-DFFMPEG_RELEASE_TAG=%{ffmpeg_release_tag}")
+%endif
 
 export CC=gcc-%{gcc_version}
 export CXX=g++-%{gcc_version}
@@ -304,14 +341,21 @@ function install_cuda() {
   fi
 }
 
+%if %{with cuda}
 if [ -n "%{cuda_version}" ] && [[ " ${cuda_supported_architectures[@]} " =~ " ${architecture} " ]]; then
   install_cuda
   cmake_args+=("-DSUNSHINE_ENABLE_CUDA=ON" "-DSUNSHINE_REQUIRE_CUDA_PASCAL=ON")
   cmake_args+=("-DCMAKE_CUDA_COMPILER:PATH=%{cuda_dir}/bin/nvcc")
   cmake_args+=("-DCMAKE_CUDA_HOST_COMPILER=gcc-%{gcc_version}")
+  if [ "%{gcc_version}" -gt 14 ]; then
+    cmake_args+=("-DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler")
+  fi
 else
   cmake_args+=("-DSUNSHINE_ENABLE_CUDA=OFF")
 fi
+%else
+cmake_args+=("-DSUNSHINE_ENABLE_CUDA=OFF" "-DCUDA_FAIL_ON_MISSING=OFF")
+%endif
 
 # setup the version
 export BRANCH=%{branch}
@@ -329,7 +373,8 @@ cd %{_builddir}/Sunshine
 echo "cmake args:"
 echo "${cmake_args[@]}"
 cmake "${cmake_args[@]}"
-make -j$(nproc) -C "%{_builddir}/Sunshine/build"
+# %{_smp_mflags} honors RPM_BUILD_NCPUS / %_smp_ncpus_max on low-memory hosts.
+ninja %{?_smp_mflags} -C "%{_builddir}/Sunshine/build"
 
 %check
 # validate the metainfo file
@@ -339,7 +384,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/*.desktop
 
 %install
 cd %{_builddir}/Sunshine/build
-%make_install
+DESTDIR=%{buildroot} cmake --install .
 # The shared CMake stage includes ALPM-only pretransaction files. RPM has its
 # own package scriptlets and must not ship files outside its manifest.
 rm -f %{buildroot}%{_prefix}/libexec/vibeshine/vibepollo-package-preflight
@@ -4750,8 +4795,9 @@ for vibepollo_executable in \
   fi
 done
 
-# Load uhid (DS5 emulation)
-echo "Loading uhid kernel module for DS5 emulation."
+# Load uinput (virtual input) and uhid (DS5 emulation)
+echo "Loading uinput and uhid kernel modules for virtual input and DS5 emulation."
+modprobe uinput || true
 modprobe uhid
 
 # Check if we're in an rpm-ostree environment
@@ -4855,12 +4901,16 @@ if [ ! -x "$(command -v rpm-ostree)" ]; then
   }
   vibepollo_restore_kwin_capability || true
 
-  if %{_prefix}/libexec/vibeshine/vibeshine-drm-install install; then
+  # install-package matches the Arch hook: it may create the DKMS signing key
+  # and queue its MOK enrollment on Secure Boot systems (status 5).
+  if %{_prefix}/libexec/vibeshine/vibeshine-drm-install install-package; then
     :
   else
     vibeshine_drm_rc=$?
     if [ "$vibeshine_drm_rc" -eq 4 ]; then
       echo "warning: Vibepollo DRM was updated, but the loaded module is stale; reboot before using managed virtual displays."
+    elif [ "$vibeshine_drm_rc" -eq 5 ]; then
+      echo "==> ACTION REQUIRED: Vibepollo DRM signing key enrollment is queued. Reboot and approve the pending MOK confirmation once."
     else
       echo "warning: Vibepollo DRM installation failed; managed virtual displays are unavailable."
     fi
@@ -8330,6 +8380,8 @@ fi
 # Executables
 %attr(0755,root,root) %{_prefix}/libexec/vibeshine/vibepollo-display-power
 %{_bindir}/vibepollo
+# /usr/bin/vibepollo is a symlink to the versioned executable.
+%{_bindir}/vibepollo-[0-9]*
 %{_bindir}/vibepollo-mangohud
 %{_prefix}/libexec/vibeshine/vibeshine-drm-install
 %{_prefix}/libexec/vibeshine/vibeshine-ds5-install

@@ -18,37 +18,43 @@ if(NOT DEFINED FFMPEG_PREPARED_BINARIES)
     # Determine download location
     set(FFMPEG_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/_deps")
 
-    # Fetch tags for the build-deps submodule so tag lookups work in CI shallow clones
-    execute_process(
-        COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" fetch --tags --depth=1
-        OUTPUT_QUIET
-        ERROR_QUIET
-    )
-
-    # Get the current commit/tag from the build-deps submodule
-    execute_process(
-        COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" describe --tags --exact-match
-        OUTPUT_VARIABLE FFMPEG_RELEASE_TAG
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-
-    # If no exact tag match, try to get the commit hash and look for a tag
-    if(NOT FFMPEG_RELEASE_TAG)
+    # Source tarballs (RPM builds) carry no submodule metadata. Asking git there
+    # would resolve an enclosing checkout and select its tag, so a packager
+    # passes the pinned build-deps tag with -DFFMPEG_RELEASE_TAG instead.
+    set(FFMPEG_RELEASE_TAG "${FFMPEG_RELEASE_TAG}" CACHE STRING "build-deps release providing FFmpeg binaries")
+    if(NOT FFMPEG_RELEASE_TAG AND EXISTS "${CMAKE_SOURCE_DIR}/third-party/build-deps/.git")
+        # Fetch tags for the build-deps submodule so tag lookups work in CI shallow clones
         execute_process(
-            COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" rev-parse HEAD
-            OUTPUT_VARIABLE BUILD_DEPS_COMMIT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" fetch --tags --depth=1
+            OUTPUT_QUIET
             ERROR_QUIET
         )
 
-        # Try to find a tag that points to this commit
+        # Get the current commit/tag from the build-deps submodule
         execute_process(
-            COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" tag --points-at ${BUILD_DEPS_COMMIT}
+            COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" describe --tags --exact-match
             OUTPUT_VARIABLE FFMPEG_RELEASE_TAG
             OUTPUT_STRIP_TRAILING_WHITESPACE
             ERROR_QUIET
         )
+
+        # If no exact tag match, try to get the commit hash and look for a tag
+        if(NOT FFMPEG_RELEASE_TAG)
+            execute_process(
+                COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" rev-parse HEAD
+                OUTPUT_VARIABLE BUILD_DEPS_COMMIT
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+
+            # Try to find a tag that points to this commit
+            execute_process(
+                COMMAND git -C "${CMAKE_SOURCE_DIR}/third-party/build-deps" tag --points-at ${BUILD_DEPS_COMMIT}
+                OUTPUT_VARIABLE FFMPEG_RELEASE_TAG
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+        endif()
     endif()
 
     # Set GitHub release URL
