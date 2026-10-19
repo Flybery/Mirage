@@ -1158,8 +1158,9 @@ install_from_rpm() {
   [[ "$identity" == 'vibepollo '* && "$identity" != *$'\n'* ]] || die 'local package is not Vibepollo'
   package_path=$(readlink -f -- "$local_package") || die 'cannot resolve the local package path'
   local -a dnf_args=("${dnf_confirm[@]}")
-  # Upstream Sunshine RPMs install the same udev rules and binaries.
-  if package_installed sunshine; then
+  # Upstream Sunshine RPMs install the same udev rules and binaries. The
+  # LizardByte COPR names its package "Sunshine"; RPM names are case-sensitive.
+  if package_installed Sunshine || package_installed sunshine; then
     warn 'The Sunshine package will be replaced by Vibepollo; your Sunshine configuration stays in your home directory.'
     dnf_args+=(--allowerasing)
   fi

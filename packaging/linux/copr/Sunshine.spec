@@ -178,6 +178,10 @@ Requires: /usr/bin/wayland-info
 Requires: /usr/bin/xdpyinfo
 Requires: socat
 Requires: util-linux
+# Like the Arch package: Vibepollo replaces Sunshine and ships the same udev
+# rules and module-load files. LizardByte's COPR names the package "Sunshine".
+Conflicts: Sunshine
+Conflicts: sunshine
 Recommends: dkms
 Recommends: gcc
 Recommends: kernel-devel

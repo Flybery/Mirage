@@ -156,6 +156,10 @@ installed_rpms[sunshine]=2025.1-1.fc43.x86_64
 install_from_rpm > /dev/null 2>&1
 grep -Fxq "dnf install --allowerasing $local_package" "$calls" || fail_test 'Sunshine was not replaced'
 reset_scenario
+installed_rpms[Sunshine]=2026.1017.185028-1.fc44.x86_64  # LizardByte COPR spelling
+install_from_rpm > /dev/null 2>&1
+grep -Fxq "dnf install --allowerasing $local_package" "$calls" || fail_test 'COPR Sunshine was not replaced'
+reset_scenario
 local_rpm_identity='sunshine 2025.1-1.fc43.x86_64'
 if (install_from_rpm) > /dev/null 2>&1; then fail_test 'a non-Vibepollo RPM was accepted'; fi
 ! grep -q '^dnf ' "$calls" || fail_test 'a rejected RPM reached dnf'
