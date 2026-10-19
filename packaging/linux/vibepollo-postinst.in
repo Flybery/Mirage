@@ -2354,6 +2354,12 @@ fi
 # Native packages receive capture capabilities only from the machine unit;
 # only the socket-activated broker ever changes identity.
 vibepollo_main="@CMAKE_INSTALL_FULL_BINDIR@/vibepollo"
+# The public name is a symlink to the versioned executable (as on Arch).
+# Validate and harden the resolved file, which must stay in the bin directory.
+vibepollo_main_target=$(readlink -f "$vibepollo_main" 2>/dev/null || true)
+case "$vibepollo_main_target" in
+  "@CMAKE_INSTALL_FULL_BINDIR@"/vibepollo-[0-9]*) vibepollo_main=$vibepollo_main_target ;;
+esac
 vibepollo_session_client="@VIBESHINE_PRIVILEGED_LIBEXEC_INSTALL_DIR@/vibepollo-session-exec"
 for vibepollo_executable in "$vibepollo_main" "$vibepollo_session_client"; do
   if [ ! -f "$vibepollo_executable" ] || [ -L "$vibepollo_executable" ]; then

@@ -4791,8 +4791,15 @@ if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   timeout --signal=KILL 15 systemctl disable vibepollo.service vibepollo-prelogin.service vibepollo-machine-prepare.service 2>/dev/null || true
 fi
 
+# %{_bindir}/vibepollo is a symlink to the versioned executable (as on Arch).
+# Validate and harden the resolved file, which must stay in %{_bindir}.
+vibepollo_main=$(readlink -f %{_bindir}/vibepollo 2>/dev/null || true)
+case "$vibepollo_main" in
+  %{_bindir}/vibepollo-[0-9]*) ;;
+  *) vibepollo_main=%{_bindir}/vibepollo ;;
+esac
 for vibepollo_executable in \
-  %{_bindir}/vibepollo \
+  "$vibepollo_main" \
   %{_prefix}/libexec/vibeshine/vibepollo-session-exec; do
   if [ ! -f "$vibepollo_executable" ] || [ -L "$vibepollo_executable" ]; then
     echo "error: native executable is missing or unsafe: $vibepollo_executable" >&2
@@ -4867,7 +4874,7 @@ if [ ! -x "$(command -v rpm-ostree)" ]; then
     exit 1
   fi
   for vibepollo_executable in \
-    %{_bindir}/vibepollo \
+    "$vibepollo_main" \
     %{_prefix}/libexec/vibeshine/vibepollo-session-exec; do
     if [ -n "$(getcap "$vibepollo_executable" 2>/dev/null)" ]; then
       echo "error: a public Vibepollo entrypoint gained file capabilities: $vibepollo_executable" >&2
