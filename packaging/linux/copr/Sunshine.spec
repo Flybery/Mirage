@@ -484,7 +484,11 @@ vibepollo_unit_is_disabled() {
 }
 vibepollo_unit_is_masked() {
   vibepollo_enabled=$(timeout --signal=KILL 5 systemctl is-enabled "$1" 2>/dev/null || true)
-  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$1" \
+  # systemd 259+ rejects a bare template name in `systemctl show`; an
+  # instance of a masked template reports LoadState=masked (as on Arch).
+  vibepollo_show_unit=$1
+  case "$1" in *@.service) vibepollo_show_unit="${1%%@.service}@mask-probe.service" ;; esac
+  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$vibepollo_show_unit" \
     --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_enabled" in
     masked | masked-runtime) [ "$vibepollo_load" = 'LoadState=masked' ] ;;
@@ -494,8 +498,10 @@ vibepollo_unit_is_masked() {
 vibepollo_restore_template_is_masked() {
   vibepollo_restore_mask=$(timeout --signal=KILL 5 systemctl is-enabled \
     'vibepollo-session-restore@.service' 2>/dev/null || true)
+  # systemd 259+ rejects a bare template name in `systemctl show`; probe an
+  # instance, which reports LoadState=masked when the template is masked.
   vibepollo_restore_load=$(timeout --signal=KILL 5 systemctl show \
-    'vibepollo-session-restore@.service' --property=LoadState 2>/dev/null) || return 1
+    'vibepollo-session-restore@mask-probe.service' --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_restore_mask" in
     masked | masked-runtime) [ "$vibepollo_restore_load" = 'LoadState=masked' ] ;;
     *) return 1 ;;
@@ -3324,8 +3330,10 @@ vibepollo_package_open_owned_host_for_stop() {
 vibepollo_restore_template_is_masked() {
   vibepollo_restore_mask=$(timeout --signal=KILL 5 systemctl is-enabled \
     'vibepollo-session-restore@.service' 2>/dev/null || true)
+  # systemd 259+ rejects a bare template name in `systemctl show`; probe an
+  # instance, which reports LoadState=masked when the template is masked.
   vibepollo_restore_load=$(timeout --signal=KILL 5 systemctl show \
-    'vibepollo-session-restore@.service' --property=LoadState 2>/dev/null) || return 1
+    'vibepollo-session-restore@mask-probe.service' --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_restore_mask" in
     masked | masked-runtime) [ "$vibepollo_restore_load" = 'LoadState=masked' ] ;;
     *) return 1 ;;
@@ -5068,7 +5076,11 @@ vibepollo_preun_unit_is_disabled() {
 
 vibepollo_preun_unit_is_masked() {
   vibepollo_enabled=$(timeout --signal=KILL 5 systemctl is-enabled "$1" 2>/dev/null || true)
-  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$1" \
+  # systemd 259+ rejects a bare template name in `systemctl show`; an
+  # instance of a masked template reports LoadState=masked (as on Arch).
+  vibepollo_show_unit=$1
+  case "$1" in *@.service) vibepollo_show_unit="${1%%@.service}@mask-probe.service" ;; esac
+  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$vibepollo_show_unit" \
     --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_enabled" in
     masked | masked-runtime) [ "$vibepollo_load" = 'LoadState=masked' ] ;;
@@ -7502,7 +7514,11 @@ vibepollo_host_is_stable_or_quiescent() {
 
 vibepollo_unit_is_masked() {
   vibepollo_enabled=$(timeout --signal=KILL 5 systemctl is-enabled "$1" 2>/dev/null || true)
-  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$1" \
+  # systemd 259+ rejects a bare template name in `systemctl show`; an
+  # instance of a masked template reports LoadState=masked (as on Arch).
+  vibepollo_show_unit=$1
+  case "$1" in *@.service) vibepollo_show_unit="${1%%@.service}@mask-probe.service" ;; esac
+  vibepollo_load=$(timeout --signal=KILL 5 systemctl show "$vibepollo_show_unit" \
     --property=LoadState 2>/dev/null) || return 1
   case "$vibepollo_enabled" in
     masked | masked-runtime) [ "$vibepollo_load" = 'LoadState=masked' ] ;;
