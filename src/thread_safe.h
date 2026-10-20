@@ -611,6 +611,24 @@ namespace safe {
       return ptr_t {this};
     }
 
+    /**
+     * @brief Reference the object only while another owner keeps it constructed.
+     *
+     * Unlike ref(), this never constructs the object, so callers that merely
+     * act on existing state cannot start (and immediately tear down) it.
+     */
+    [[nodiscard]] ptr_t ref_if_active() {
+      std::lock_guard lg {_lock};
+
+      if (!_count) {
+        return ptr_t {nullptr};
+      }
+
+      ++_count;
+
+      return ptr_t {this};
+    }
+
   private:
     construct_f _construct;
     destruct_f _destruct;

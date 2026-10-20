@@ -570,6 +570,13 @@ namespace stream {
   struct broadcast_ctx_t {
     message_queue_queue_t message_queue_queue;
 
+    // The mail registry keeps only weak references. Hold the packet queues and
+    // shutdown event for the whole broadcast so a broadcast thread that starts
+    // after end_broadcast() still sees the stopped instances, not fresh ones.
+    safe::mail_raw_t::queue_t<video::packet_t> video_packets;
+    safe::mail_raw_t::queue_t<audio::packet_t> audio_packets;
+    safe::mail_raw_t::event_t<bool> shutdown_event;
+
     // Raw datagram counters for the video/audio sockets. Used to distinguish
     // "no UDP reached us at all" (blocked by firewall/VPN filter driver) from
     // "UDP arrived but didn't match a session" when waiting for pings.
@@ -781,7 +788,8 @@ namespace stream {
   static auto broadcast = safe::make_shared<broadcast_ctx_t>(start_broadcast, end_broadcast);
 
   void request_idr_for_all_sessions() {
-    auto ref = broadcast.ref();
+    // Only act on a running broadcast; ref() would start one for no session.
+    auto ref = broadcast.ref_if_active();
     if (!ref) {
       return;
     }
@@ -852,7 +860,9 @@ namespace stream {
     if (bitrate_kbps <= 0) {
       return 0;
     }
-    auto ref = broadcast.ref();
+    // A bitrate request after the stream ended must not start a broadcast:
+    // releasing that reference here would tear it down on the HTTPS thread.
+    auto ref = broadcast.ref_if_active();
     if (!ref) {
       return 0;
     }
@@ -3007,6 +3017,9 @@ namespace stream {
     auto audio_packets = mail::man->queue<audio::packet_t>(mail::audio_packets);
     video_packets->reset();
     audio_packets->reset();
+    ctx.video_packets = video_packets;
+    ctx.audio_packets = audio_packets;
+    ctx.shutdown_event = broadcast_shutdown_event;
 
     auto address_family = net::af_from_enum_string(config::sunshine.address_family);
     auto control_port = net::map_port(CONTROL_PORT);
@@ -3106,8 +3119,10 @@ namespace stream {
 
     broadcast_shutdown_event->raise(true);
 
-    auto video_packets = mail::man->queue<video::packet_t>(mail::video_packets);
-    auto audio_packets = mail::man->queue<audio::packet_t>(mail::audio_packets);
+    // These are the instances start_broadcast() handed to the broadcast threads,
+    // even when a thread has not looked its queue up yet.
+    auto video_packets = ctx.video_packets ? ctx.video_packets : mail::man->queue<video::packet_t>(mail::video_packets);
+    auto audio_packets = ctx.audio_packets ? ctx.audio_packets : mail::man->queue<audio::packet_t>(mail::audio_packets);
 
     // Minimize delay stopping video/audio threads
     video_packets->stop();
