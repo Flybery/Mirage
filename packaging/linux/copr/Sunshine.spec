@@ -990,6 +990,14 @@ vibepollo_bounded_unit_list() (
   [ "$vibepollo_unit_list_size" -le 65536 ] || return 1
   cat -- "$vibepollo_unit_list"
 )
+vibepollo_remove_stale_control_socket() {
+  # Masking replaces a running socket unit's settings, so systemd closes it
+  # without RemoveOnStop. Behind its mask and once quiescent, remove the stale
+  # path as RemoveOnStop would have; never follow or remove a non-socket.
+  [ -e "$vibepollo_control_socket" ] || [ -L "$vibepollo_control_socket" ] || return 0
+  [ -S "$vibepollo_control_socket" ] && [ ! -L "$vibepollo_control_socket" ] || return 1
+  rm -f -- "$vibepollo_control_socket"
+}
 vibepollo_control_instances_are_quiescent() (
   vibepollo_control_attempt=0
   vibepollo_control_clean_passes=0
@@ -2383,6 +2391,7 @@ vibepollo_quiesce_machine_host() {
     vq vibepollo_control_socket_is_masked || return 1
     vq vibepollo_stop_exact_unit vibeshine-vkms-control.socket
     vq vibepollo_unit_is_quiescent vibeshine-vkms-control.socket || return 1
+    vq vibepollo_remove_stale_control_socket || return 1
     vq vibepollo_control_instances_are_quiescent || return 1
     vq vibepollo_package_mark_late || return 1
     vibepollo_shutdown_started=1
@@ -3420,6 +3429,14 @@ vibepollo_capture_unit_list() {
   [ "$vibepollo_unit_list_size" -le 65536 ]
 }
 
+vibepollo_remove_stale_control_socket() {
+  # Masking replaces a running socket unit's settings, so systemd closes it
+  # without RemoveOnStop. Behind its mask and once quiescent, remove the stale
+  # path as RemoveOnStop would have; never follow or remove a non-socket.
+  [ -e "$vibepollo_control_socket" ] || [ -L "$vibepollo_control_socket" ] || return 0
+  [ -S "$vibepollo_control_socket" ] && [ ! -L "$vibepollo_control_socket" ] || return 1
+  rm -f -- "$vibepollo_control_socket"
+}
 vibepollo_control_instances_are_quiescent() (
   vibepollo_control_list=$(mktemp /run/vibepollo-control-units.XXXXXX) || exit 1
   trap 'rm -f -- "$vibepollo_control_list"' 0
@@ -4663,6 +4680,7 @@ vibepollo_quiesce_machine_host() {
     vq vibepollo_control_socket_is_masked || return 1
     vibepollo_stop_exact_unit vibeshine-vkms-control.socket
     vq vibepollo_unit_is_quiescent vibeshine-vkms-control.socket || return 1
+    vq vibepollo_remove_stale_control_socket || return 1
     # Masking the socket unit before stopping it drops its RemoveOnStop=
     # configuration, so the listening path survives the stop. Nothing can
     # accept on it any more; remove it so the instance check sees a clean slate.
@@ -5728,6 +5746,14 @@ vibepollo_control_unit_is_safe() {
   esac
 }
 
+vibepollo_remove_stale_control_socket() {
+  # Masking replaces a running socket unit's settings, so systemd closes it
+  # without RemoveOnStop. Behind its mask and once quiescent, remove the stale
+  # path as RemoveOnStop would have; never follow or remove a non-socket.
+  [ -e "$vibepollo_control_socket" ] || [ -L "$vibepollo_control_socket" ] || return 0
+  [ -S "$vibepollo_control_socket" ] && [ ! -L "$vibepollo_control_socket" ] || return 1
+  rm -f -- "$vibepollo_control_socket"
+}
 vibepollo_control_instances_are_quiescent() (
   vibepollo_control_list=$(mktemp /run/vibepollo-control-units.XXXXXX) || exit 1
   trap 'rm -f -- "$vibepollo_control_list"' 0
@@ -7179,6 +7205,14 @@ vibepollo_capture_unit_list() {
   [ "$vibepollo_unit_list_size" -le 65536 ]
 }
 
+vibepollo_remove_stale_control_socket() {
+  # Masking replaces a running socket unit's settings, so systemd closes it
+  # without RemoveOnStop. Behind its mask and once quiescent, remove the stale
+  # path as RemoveOnStop would have; never follow or remove a non-socket.
+  [ -e "$vibepollo_control_socket" ] || [ -L "$vibepollo_control_socket" ] || return 0
+  [ -S "$vibepollo_control_socket" ] && [ ! -L "$vibepollo_control_socket" ] || return 1
+  rm -f -- "$vibepollo_control_socket"
+}
 vibepollo_control_instances_are_quiescent() (
   vibepollo_control_list=$(mktemp /run/vibepollo-control-units.XXXXXX) || exit 1
   trap 'rm -f -- "$vibepollo_control_list"' 0

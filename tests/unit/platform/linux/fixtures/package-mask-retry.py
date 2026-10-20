@@ -70,6 +70,7 @@ product_preserved_quiesce_is_safe() { return 1; }
 product_stop_restore_instances() { return 0; }
 product_stop_brokers() { return 0; }
 product_control_instances_are_quiescent() { return 0; }
+product_remove_stale_control_socket() { return 0; }
 product_brokers_are_quiescent() { return 0; }
 product_restore_instances_are_quiescent() { return 0; }
 product_disable_legacy_handoff() { return 0; }
