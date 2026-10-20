@@ -188,6 +188,29 @@ SHA1 Fingerprint: ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01'
 )
 printf 'PASS: an already queued DKMS signing key is recognized without prompting again.\n'
 
+# --- DualSense module without srcversion -------------------------------------
+(
+  module_root="$fixture/sys-module"
+  mkdir -p "$module_root/vibeshine_ds5"
+  kernel_release=7.2.11-200.fc44.x86_64
+  modinfo() {
+    case "$*" in
+      *srcversion*) printf '%s\n' "$module_srcversion" ;;
+      *filename*) printf '/lib/modules/%s/extra/vibeshine_ds5.ko.xz\n' "$kernel_release" ;;
+    esac
+  }
+  module_srcversion=''
+  dualsense_loaded_without_srcversion "$module_root" || fail_test 'a loaded module on a srcversion-less kernel was rejected'
+  module_srcversion=ABCDEF0123456789
+  if dualsense_loaded_without_srcversion "$module_root"; then fail_test 'a module with srcversion bypassed the freshness check'; fi
+  module_srcversion=''
+  touch "$module_root/vibeshine_ds5/srcversion"
+  if dualsense_loaded_without_srcversion "$module_root"; then fail_test 'a loaded srcversion bypassed the freshness check'; fi
+  rm -rf "$module_root/vibeshine_ds5"
+  if dualsense_loaded_without_srcversion "$module_root"; then fail_test 'an unloaded module was accepted'; fi
+)
+printf 'PASS: a loaded DualSense module is accepted on kernels that record no srcversion.\n'
+
 # --- GNOME user service ------------------------------------------------------
 (
   unit_root="$fixture/user-units"

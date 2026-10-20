@@ -1283,14 +1283,30 @@ install_virtual_driver() {
   ok "Virtual-display driver ${installed} is installed for ${kernel_release}."
 }
 
+# The DS5 helper compares the installed and loaded srcversion. Kernels built
+# without CONFIG_MODULE_SRCVERSION_ALL (Fedora) record none for this module,
+# so its status check fails although the module is loaded. Accept exactly that.
+dualsense_loaded_without_srcversion() {
+  local module_root=${1:-/sys/module}
+  [[ -d "$module_root/vibeshine_ds5" && ! -e "$module_root/vibeshine_ds5/srcversion" ]] || return 1
+  [[ -z "$(modinfo -k "$kernel_release" -F srcversion vibeshine_ds5 2>/dev/null)" ]] || return 1
+  modinfo -k "$kernel_release" -F filename vibeshine_ds5 >/dev/null 2>&1
+}
+
 install_dualsense_driver() {
   local helper=${1:-$DS5_INSTALL} result=0
   [[ -x "$helper" ]] || die "the package is missing the DualSense USB installer: $helper"
   if "$helper" status; then result=0; else result=$?; fi
+  if [[ $result != 0 && $result != 4 ]] && dualsense_loaded_without_srcversion; then
+    result=0
+  fi
   if [[ $result != 0 && $result != 4 ]]; then
     install_kernel_headers
     log "Installing the DualSense USB driver for ${kernel_release}"
     if "$helper" install; then result=0; else result=$?; fi
+    if [[ $result != 0 && $result != 4 ]] && dualsense_loaded_without_srcversion; then
+      result=0
+    fi
   fi
   case "$result" in
     0) ok 'DualSense USB driver is installed and loaded.' ;;
