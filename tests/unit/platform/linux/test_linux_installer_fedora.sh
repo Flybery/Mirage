@@ -6,6 +6,9 @@ repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../../.." && pwd -P)
 source "$repo/scripts/linux_install.sh"
 # The installer's own cleanup and signal traps are not part of this fixture.
 trap - EXIT HUP INT TERM
+# Never touch the real user managers; the dedicated test below uses mocks.
+eval "$(declare -f stop_gnome_user_services | sed '1s/stop_gnome_user_services/stop_gnome_user_services_real/')"
+stop_gnome_user_services() { :; }
 
 fixture=$(mktemp -d /tmp/vibepollo-fedora-installer-test.XXXXXXXX)
 trap 'rm -rf -- "$fixture"' EXIT
@@ -241,6 +244,30 @@ printf 'PASS: a loaded DualSense module is accepted on kernels that record no sr
   ! grep -q '^systemctl' "$calls" || fail_test 'the GNOME unit was enabled without GNOME installed'
 )
 printf 'PASS: GNOME hosts enable the user service and start it in the active desktop session.\n'
+
+(
+  unit_root="$fixture/user-units"
+  mkdir -p "$unit_root"
+  touch "$unit_root/vibepollo-gnome.service"
+  loginctl() { printf '1000 bo no active\n1001 alice no lingering\n42 bad:name no active\n'; }
+  systemctl() {
+    printf 'systemctl %s\n' "$*" >> "$calls"
+    case "$*" in
+      *bo@.host\ is-active*) return 0 ;;
+      *is-active*) return 3 ;;
+    esac
+  }
+  : > "$calls"
+  stop_gnome_user_services_real "$unit_root" > /dev/null 2>&1
+  grep -Fxq 'systemctl --user --machine=bo@.host stop vibepollo-gnome.service' "$calls" ||
+    fail_test 'a running GNOME host was not stopped before the package transaction'
+  ! grep -q 'alice@.host stop' "$calls" || fail_test 'an inactive GNOME unit was stopped'
+  ! grep -q 'bad:name' "$calls" || fail_test 'an invalid user name reached systemctl'
+  : > "$calls"
+  stop_gnome_user_services_real "$fixture/absent-units" > /dev/null 2>&1
+  [[ ! -s "$calls" ]] || fail_test 'user managers were queried without the GNOME unit installed'
+)
+printf 'PASS: running GNOME hosts are stopped before the package is replaced.\n'
 
 # --- Main step order ---------------------------------------------------------
 (

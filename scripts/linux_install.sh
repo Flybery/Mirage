@@ -1183,6 +1183,7 @@ install_from_rpm() {
 
 install_vibepollo() {
   workdir=$(mktemp -d /tmp/vibepollo-installer.XXXXXXXX)
+  stop_gnome_user_services
   if [[ "$package_backend" == dnf ]]; then
     [[ -n "$local_package" ]] || download_release_rpm
     install_from_rpm
@@ -1206,6 +1207,7 @@ install_vibepollo() {
 remove_vibepollo() {
   if [[ "$package_backend" == dnf ]]; then
     package_installed vibepollo || { ok 'Vibepollo is not installed.'; return 0; }
+    stop_gnome_user_services
     log 'Removing Vibepollo with dnf; the package scripts stop the host first'
     run_from_root dnf remove "${dnf_confirm[@]}" vibepollo || return $?
     ok 'Vibepollo was removed; existing machine profile data is preserved.'
@@ -1406,6 +1408,21 @@ repair_machine_setup() {
 }
 
 readonly GNOME_USER_UNIT=vibepollo-gnome.service
+
+# The package hooks refuse to replace a host still running in a user session,
+# which they neither started nor own. Stop the GNOME user unit for every
+# logged-in user first; enable_gnome_user_service starts it again afterwards.
+stop_gnome_user_services() {
+  local unit_root=${1:-/usr/lib/systemd/user} user
+  [[ -f "$unit_root/$GNOME_USER_UNIT" ]] || return 0
+  while read -r _ user _; do
+    [[ "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || continue
+    systemctl --user --machine="${user}@.host" is-active --quiet "$GNOME_USER_UNIT" 2>/dev/null || continue
+    log "Stopping ${GNOME_USER_UNIT} for ${user} before replacing the package; an active stream disconnects."
+    systemctl --user --machine="${user}@.host" stop "$GNOME_USER_UNIT" ||
+      warn "Could not stop ${GNOME_USER_UNIT} for ${user}; the package scripts will refuse the replacement."
+  done < <(loginctl list-users --no-legend 2>/dev/null)
+}
 
 enable_gnome_user_service() {
   local unit_root=${1:-/usr/lib/systemd/user} session user class
