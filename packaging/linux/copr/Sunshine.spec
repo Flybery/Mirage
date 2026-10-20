@@ -4920,9 +4920,11 @@ if [ ! -x "$(command -v rpm-ostree)" ]; then
   }
   vibepollo_restore_kwin_capability || true
 
-  # install-package matches the Arch hook: it may create the DKMS signing key
-  # and queue its MOK enrollment on Secure Boot systems (status 5).
-  if %{_prefix}/libexec/vibeshine/vibeshine-drm-install install-package; then
+  # Never prompt from a scriptlet: dnf hides scriptlet output until it ends, so
+  # mokutil's enrollment password prompt would wait invisibly. The plain
+  # install builds and signs the module; scripts/linux_install.sh (or the
+  # command below) queues the one-time MOK enrollment interactively.
+  if %{_prefix}/libexec/vibeshine/vibeshine-drm-install install </dev/null; then
     :
   else
     vibeshine_drm_rc=$?
@@ -4931,10 +4933,12 @@ if [ ! -x "$(command -v rpm-ostree)" ]; then
     elif [ "$vibeshine_drm_rc" -eq 5 ]; then
       echo "==> ACTION REQUIRED: Vibepollo DRM signing key enrollment is queued. Reboot and approve the pending MOK confirmation once."
     else
-      echo "warning: Vibepollo DRM installation failed; managed virtual displays are unavailable."
+      echo "==> ACTION REQUIRED: the Vibepollo virtual-display module is not ready. On Secure Boot systems, authorize its signing key once with:"
+      echo "      sudo %{_prefix}/libexec/vibeshine/vibeshine-drm-install install-package"
+      echo "    then reboot and approve the pending MOK confirmation."
     fi
   fi
-  if ! %{_prefix}/libexec/vibeshine/vibeshine-ds5-install install; then
+  if ! %{_prefix}/libexec/vibeshine/vibeshine-ds5-install install </dev/null; then
     echo "warning: DualSense USB haptics are unavailable or require a reboot; see the module error above." >&2
   fi
   vibepollo_machine_helper=%{_prefix}/libexec/vibeshine/vibepollo-machine-host
