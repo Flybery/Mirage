@@ -220,6 +220,7 @@ printf 'PASS: a loaded DualSense module is accepted on kernels that record no sr
   mkdir -p "$unit_root"
   touch "$unit_root/vibepollo-gnome.service"
   systemctl() { printf 'systemctl %s\n' "$*" >> "$calls"; }
+  user_systemctl() { printf 'user_systemctl %s\n' "$*" >> "$calls"; }
   loginctl() {
     case "$*" in
       *ActiveSession*) printf '5\n' ;;
@@ -232,13 +233,13 @@ printf 'PASS: a loaded DualSense module is accepted on kernels that record no sr
   session_class=user
   enable_gnome_user_service "$unit_root" > /dev/null 2>&1
   grep -Fxq 'systemctl --global enable vibepollo-gnome.service' "$calls" || fail_test 'GNOME unit was not enabled'
-  grep -Fxq 'systemctl --user --machine=bo@.host start vibepollo-gnome.service' "$calls" ||
+  grep -Fxq 'user_systemctl bo start vibepollo-gnome.service' "$calls" ||
     fail_test 'GNOME unit was not started for the logged-in user'
   reset_scenario
   installed_rpms[gnome-shell]=50.5-1.fc44.x86_64
   session_class=greeter
   enable_gnome_user_service "$unit_root" > /dev/null 2>&1
-  ! grep -q -- '--machine=' "$calls" || fail_test 'the GNOME unit was started for a greeter session'
+  ! grep -q '^user_systemctl' "$calls" || fail_test 'the GNOME unit was started for a greeter session'
   reset_scenario
   enable_gnome_user_service "$unit_root" > /dev/null 2>&1
   ! grep -q '^systemctl' "$calls" || fail_test 'the GNOME unit was enabled without GNOME installed'
@@ -250,18 +251,18 @@ printf 'PASS: GNOME hosts enable the user service and start it in the active des
   mkdir -p "$unit_root"
   touch "$unit_root/vibepollo-gnome.service"
   loginctl() { printf '1000 bo no active\n1001 alice no lingering\n42 bad:name no active\n'; }
-  systemctl() {
-    printf 'systemctl %s\n' "$*" >> "$calls"
+  user_systemctl() {
+    printf 'user_systemctl %s\n' "$*" >> "$calls"
     case "$*" in
-      *bo@.host\ is-active*) return 0 ;;
+      'bo is-active'*) return 0 ;;
       *is-active*) return 3 ;;
     esac
   }
   : > "$calls"
   stop_gnome_user_services_real "$unit_root" > /dev/null 2>&1
-  grep -Fxq 'systemctl --user --machine=bo@.host stop vibepollo-gnome.service' "$calls" ||
+  grep -Fxq 'user_systemctl bo stop vibepollo-gnome.service' "$calls" ||
     fail_test 'a running GNOME host was not stopped before the package transaction'
-  ! grep -q 'alice@.host stop' "$calls" || fail_test 'an inactive GNOME unit was stopped'
+  ! grep -q 'alice stop' "$calls" || fail_test 'an inactive GNOME unit was stopped'
   ! grep -q 'bad:name' "$calls" || fail_test 'an invalid user name reached systemctl'
   : > "$calls"
   stop_gnome_user_services_real "$fixture/absent-units" > /dev/null 2>&1

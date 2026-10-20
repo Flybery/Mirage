@@ -1409,6 +1409,18 @@ repair_machine_setup() {
 
 readonly GNOME_USER_UNIT=vibepollo-gnome.service
 
+# Run `systemctl --user` as USER against that user's own manager. The
+# `--machine=USER@.host` transport needs a transient unit, which fails when the
+# installer itself runs from systemd-run ("Remote peer disconnected").
+user_systemctl() {
+  local user=$1 uid
+  shift
+  uid=$(id -u -- "$user" 2>/dev/null) || return 1
+  [[ "$uid" =~ ^[1-9][0-9]*$ && -S "/run/user/$uid/bus" ]] || return 1
+  runuser -u "$user" -- env XDG_RUNTIME_DIR="/run/user/$uid" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" systemctl --user "$@"
+}
+
 # The package hooks refuse to replace a host still running in a user session,
 # which they neither started nor own. Stop the GNOME user unit for every
 # logged-in user first; enable_gnome_user_service starts it again afterwards.
@@ -1417,9 +1429,9 @@ stop_gnome_user_services() {
   [[ -f "$unit_root/$GNOME_USER_UNIT" ]] || return 0
   while read -r _ user _; do
     [[ "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || continue
-    systemctl --user --machine="${user}@.host" is-active --quiet "$GNOME_USER_UNIT" 2>/dev/null || continue
+    user_systemctl "$user" is-active --quiet "$GNOME_USER_UNIT" 2>/dev/null || continue
     log "Stopping ${GNOME_USER_UNIT} for ${user} before replacing the package; an active stream disconnects."
-    systemctl --user --machine="${user}@.host" stop "$GNOME_USER_UNIT" ||
+    user_systemctl "$user" stop "$GNOME_USER_UNIT" ||
       warn "Could not stop ${GNOME_USER_UNIT} for ${user}; the package scripts will refuse the replacement."
   done < <(loginctl list-users --no-legend 2>/dev/null)
 }
@@ -1441,7 +1453,7 @@ enable_gnome_user_service() {
   user=$(loginctl show-session "$session" --property=Name --value 2>/dev/null) || return 0
   class=$(loginctl show-session "$session" --property=Class --value 2>/dev/null) || return 0
   [[ "$class" == user && "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || return 0
-  if systemctl --user --machine="${user}@.host" start "$GNOME_USER_UNIT" >/dev/null 2>&1; then
+  if user_systemctl "$user" start "$GNOME_USER_UNIT" >/dev/null 2>&1; then
     ok "Started ${GNOME_USER_UNIT} for ${user}; on GNOME, approve the screen-sharing request once."
   else
     warn "Could not start ${GNOME_USER_UNIT} for ${user} now; it starts at the next GNOME login."
