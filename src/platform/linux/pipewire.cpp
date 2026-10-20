@@ -74,6 +74,12 @@ namespace pipewire {
     std::atomic<int> color_matrix {0};
     std::atomic<bool> stream_dead {false};
     std::atomic<bool> initializing {true};
+    // A producer may pause briefly while it reconfigures (Mutter pauses a
+    // virtual monitor's stream when the monitor layout changes). With
+    // tolerate_pause, a pause only records its start; capture recreates the
+    // stream only if it stays paused (see paused_stream_limit).
+    std::atomic<bool> tolerate_pause {false};
+    std::atomic<std::int64_t> paused_since_ns {0};
     pw_stream_state previous_state = PW_STREAM_STATE_UNCONNECTED;
     pw_stream_state current_state = PW_STREAM_STATE_UNCONNECTED;
     std::string err_msg;
@@ -505,7 +511,23 @@ namespace pipewire {
 
       switch (state) {
         case PW_STREAM_STATE_PAUSED:
-          if (d->shared && old == PW_STREAM_STATE_STREAMING && !d->shared->initializing.load()) {
+          if (d->shared && old == PW_STREAM_STATE_STREAMING && !d->shared->initializing.load() &&
+              d->shared->tolerate_pause.load()) {
+            {
+              std::scoped_lock lock(d->frame_mutex);
+              d->frame_ready = false;
+              d->current_buffer = nullptr;
+              d->shared->current_state = state;
+              d->shared->previous_state = old;
+              std::int64_t expected = 0;
+              const auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                    std::chrono::steady_clock::now().time_since_epoch()
+              )
+                                    .count();
+              d->shared->paused_since_ns.compare_exchange_strong(expected, now_ns);
+            }
+            d->frame_cv.notify_all();
+          } else if (d->shared && old == PW_STREAM_STATE_STREAMING && !d->shared->initializing.load()) {
             {
               std::scoped_lock lock(d->frame_mutex);
               d->frame_ready = false;
@@ -530,6 +552,11 @@ namespace pipewire {
           if (d->shared) {
             d->shared->stream_dead.store(true);
             d->frame_cv.notify_all();
+          }
+          break;
+        case PW_STREAM_STATE_STREAMING:
+          if (d->shared) {
+            d->shared->paused_since_ns.store(0);
           }
           break;
         default:
@@ -948,6 +975,13 @@ namespace pipewire {
       return false;  // Return to default stream dead handling.
     }
 
+    /** Whether a brief producer pause keeps this stream (see shared_state_t). */
+    virtual bool tolerate_transient_pause() const {
+      return false;
+    }
+
+    static constexpr auto paused_stream_limit = std::chrono::seconds(3);
+
     platf::capture_e capture(const push_captured_image_cb_t &push_captured_image_cb, const pull_free_image_cb_t &pull_free_image_cb, bool *cursor) override {
       auto next_frame = std::chrono::steady_clock::now();
 
@@ -955,6 +989,8 @@ namespace pipewire {
         BOOST_LOG(error) << "[pipewire] Failed to ensure pipewire stream. capture() failed with error.";
         return platf::capture_e::error;
       }
+      shared_state->tolerate_pause.store(tolerate_transient_pause());
+      shared_state->paused_since_ns.store(0);
       sleep_overshoot_logger.reset();
 
       while (true) {
@@ -967,6 +1003,13 @@ namespace pipewire {
           // Re-init the capture if the stream is dead for any other reason
           BOOST_LOG(warning) << "[pipewire] PipeWire stream disconnected. Forcing session reset."sv;
           return platf::capture_e::reinit;
+        }
+        if (const auto paused_since = shared_state->paused_since_ns.load(); paused_since != 0) {
+          const auto paused_for = std::chrono::steady_clock::now().time_since_epoch() - std::chrono::nanoseconds(paused_since);
+          if (paused_for > paused_stream_limit) {
+            BOOST_LOG(warning) << "[pipewire] PipeWire stream stayed paused; forcing session reset."sv;
+            return platf::capture_e::reinit;
+          }
         }
 
         // Advance to (or catch up with) next delay interval

@@ -732,6 +732,13 @@ namespace portal {
       return 0;
     }
 
+    // Mutter pauses a virtual monitor's stream while the user rearranges
+    // monitors. Recreating the stream would replace the monitor, which then
+    // reappears at Mutter's default position and undoes the arrangement.
+    bool tolerate_transient_pause() const override {
+      return dbus.virtual_source;
+    }
+
     bool check_stream_dead(platf::capture_e &out_status) override {
       // If the pipewire stream stopped due to closed portal session stop the capture with an error
       if (dbus.is_session_closed()) {
