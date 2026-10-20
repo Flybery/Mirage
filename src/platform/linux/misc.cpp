@@ -52,6 +52,7 @@
 #endif
 
 // local includes
+#include "desktop_mode.h"
 #include "graphics.h"
 #include "misc.h"
 #include "render_device.h"
@@ -1595,6 +1596,14 @@ namespace platf {
 
   std::unique_ptr<deinit_t> init() {
     sources.reset();
+    // The GNOME user mode streams the existing desktop through the ScreenCast
+    // portal: an unprivileged user cannot capture through KMS, and the managed
+    // VKMS pool belongs to the KDE machine service. An explicit choice wins.
+    const std::string capture =
+      config::video.capture.empty() && linux_desktop::gnome_mode() ? std::string {"portal"} : config::video.capture;
+    if (capture != config::video.capture) {
+      BOOST_LOG(info) << "GNOME desktop mode: capturing the desktop through the ScreenCast portal."sv;
+    }
     // enable low latency mode for AMD
     // https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/30039
     set_env("AMD_DEBUG", "lowlatencyenc");
@@ -1622,7 +1631,7 @@ namespace platf {
 #endif
 
 #ifdef SUNSHINE_BUILD_GAMESCOPE
-    if ((config::video.capture.empty() || config::video.capture == "gamescope") && gamescope_available()) {
+    if ((capture.empty() || capture == "gamescope") && gamescope_available()) {
       sources[source::GAMESCOPE] = true;
       // SteamOS publishes DISPLAY in gamescope-environment rather than in
       // the user manager. Import it only after verifying the compositor.
@@ -1634,7 +1643,7 @@ namespace platf {
     bool native_compositor_selected = false;
 #endif
 #ifdef SUNSHINE_BUILD_DRM
-    if (config::video.capture.empty() && sources.none() &&
+    if (capture.empty() && sources.none() &&
         config::video.virtual_display_mode != config::video_t::virtual_display_mode_e::disabled &&
         linux_private_display::kernel_pool_available()) {
       sources[source::KMS] = true;
@@ -1645,26 +1654,26 @@ namespace platf {
     // Desktop Mode provides KWin's native screencast interface. Select it
     // before portal enumeration, which can open an interactive consent dialog.
     // Gaming Mode keeps the Gamescope backend selected above.
-    if (config::video.capture.empty() && sources.none() && verify_kwin()) {
+    if (capture.empty() && sources.none() && verify_kwin()) {
       sources[source::KWIN] = true;
       native_compositor_selected = true;
       BOOST_LOG(info) << "Using KWin compositor capture for SteamOS Desktop Mode."sv;
     }
 #endif
 #ifdef SUNSHINE_BUILD_CUDA
-    if (((config::video.capture.empty() && sources.none()) || config::video.capture == "nvfbc") && verify_nvfbc()) {
+    if (((capture.empty() && sources.none()) || capture == "nvfbc") && verify_nvfbc()) {
       sources[source::NVFBC] = true;
     }
 #endif
 #ifdef SUNSHINE_BUILD_WAYLAND
-    if (((config::video.capture.empty() && sources.none()) || config::video.capture == "wlr") && verify_wl()) {
+    if (((capture.empty() && sources.none()) || capture == "wlr") && verify_wl()) {
       sources[source::WAYLAND] = true;
     }
 #endif
 #ifdef SUNSHINE_BUILD_DRM
-    if ((config::video.capture.empty() && sources.none()) || config::video.capture == "kms") {
+    if ((capture.empty() && sources.none()) || capture == "kms") {
       const bool outputs_available = verify_kms();
-      sources[source::KMS] = linux_private_display_capture::enable_kms(config::video.capture == "kms", outputs_available);
+      sources[source::KMS] = linux_private_display_capture::enable_kms(capture == "kms", outputs_available);
       if (sources[source::KMS] && !outputs_available) {
         BOOST_LOG(warning) << "KMS has no active capture output yet; retaining the requested backend for recovery."sv;
       }
@@ -1673,13 +1682,13 @@ namespace platf {
 #ifdef SUNSHINE_BUILD_X11
     // We enumerate this capture backend regardless of other suitable sources,
     // since it may be needed as a NvFBC fallback for software encoding on X11.
-    if (((config::video.capture.empty() && !native_compositor_selected) || config::video.capture == "x11") && verify_x11()) {
+    if (((capture.empty() && !native_compositor_selected) || capture == "x11") && verify_x11()) {
       sources[source::X11] = true;
     }
 #endif
 #ifdef SUNSHINE_BUILD_PORTAL
     if (linux_private_display_capture::probe_portal(
-          config::video.capture.empty(), config::video.capture == "portal",
+          capture.empty(), capture == "portal",
           native_compositor_selected,
 #ifdef SUNSHINE_BUILD_DRM
           sources[source::KMS]
@@ -1691,7 +1700,7 @@ namespace platf {
     }
 #endif
 #ifdef SUNSHINE_BUILD_KWIN
-    if (((config::video.capture.empty() && sources.none()) || config::video.capture == "kwin") && verify_kwin()) {
+    if (((capture.empty() && sources.none()) || capture == "kwin") && verify_kwin()) {
       sources[source::KWIN] = true;
     }
 #endif

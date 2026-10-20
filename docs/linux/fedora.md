@@ -9,7 +9,7 @@ Porting status and the hardware test plan are in [fedora-handoff.md](fedora-hand
 | Requirement | Fedora detail |
 | --- | --- |
 | Release | Fedora 43 or 44, x86_64. Fedora Atomic desktops (Kinoite, Silverblue, Bazzite) are not supported. |
-| Desktop | KDE Plasma 6 on **Wayland**. Use Fedora KDE Plasma Desktop, or add Plasma to Fedora Workstation with `sudo dnf group install kde-desktop` and choose **Plasma (Wayland)** on the login screen. GNOME sessions are not streamed. |
+| Desktop | **GNOME** (Fedora Workstation) or **KDE Plasma 6**, both on Wayland. GNOME runs Vibepollo as a user service that streams the existing desktop through the screen-sharing portal (see [GNOME mode](#gnome-mode)). Plasma uses the machine-wide service with managed virtual displays. |
 | Login manager | SDDM, Plasma Login Manager or GDM. The login screen itself is streamed only with Plasma Login Manager on NVIDIA; otherwise streaming starts after you log in. Automatic login avoids having to sign in locally after a reboot. |
 | Kernel | Linux 6.16 or newer with the matching `kernel-devel`. Fedora mirrors carry headers only for the newest kernel, so install updates and reboot before installing Vibepollo. |
 | Encoding drivers | Fedora's own Mesa and Intel media drivers cannot encode H.264/HEVC. The installer offers [RPM Fusion](https://rpmfusion.org/Configuration) and installs the right driver for your GPU (see below). |
@@ -54,6 +54,30 @@ the blue MOK Manager screen appears.
 
 Remove Vibepollo with `sudo bash scripts/linux_install.sh --remove` (or `sudo dnf remove vibepollo`).
 Removal keeps the machine profile and pairings in `/var/lib/vibepollo`.
+
+## GNOME mode
+
+On GNOME, the `vibepollo-gnome.service` user unit runs `/usr/bin/vibepollo` inside your session.
+The installer enables it for all users; it skips itself in any non-GNOME session, where the
+machine-wide service applies instead. In this mode Vibepollo:
+
+- captures the desktop through the ScreenCast portal. The first start asks which screen to share;
+  allow GNOME to remember the choice so later streams start without a prompt.
+- stores its configuration and pairings in `~/.config/vibepollo`, separate from the machine
+  profile in `/var/lib/vibepollo` that Plasma sessions use.
+- streams the existing desktop when a client requests a virtual display. Extended (virtual)
+  screens on GNOME are planned.
+
+Useful commands:
+
+```bash
+systemctl --user status vibepollo-gnome.service
+journalctl --user -u vibepollo-gnome.service -b
+systemctl --user restart vibepollo-gnome.service   # ends an active stream
+```
+
+This mode deliberately reintroduces a per-user host for GNOME only. The KDE machine service and its
+privilege model are unchanged.
 
 ## Known differences from Arch
 

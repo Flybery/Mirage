@@ -868,6 +868,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
     sunshine_register_component(NAME test_component_linux_vulkan_encode_policy TEST_SOURCE unit/platform/linux/test_vulkan_encode_policy.cpp)
     sunshine_register_component(NAME test_component_linux_capture_status TEST_SOURCE unit/platform/linux/test_capture_status.cpp)
+    sunshine_register_component(NAME test_component_linux_desktop_mode TEST_SOURCE unit/platform/linux/test_desktop_mode.cpp)
     sunshine_register_component(NAME test_component_linux_private_display_capture_policy TEST_SOURCE unit/platform/linux/test_private_display_capture_policy.cpp)
     sunshine_register_component(NAME test_component_linux_private_display_restore_policy TEST_SOURCE unit/platform/linux/test_private_display_restore_policy.cpp
         LINK_LIBRARIES nlohmann_json::nlohmann_json)

@@ -73,6 +73,7 @@ OPTIONAL = {f'usr/share/icons/hicolor/scalable/status/apollo-{state}.svg'
 FIXED.update(f'usr/lib/systemd/user/{unit}.service.d/{dropin}.conf'
              for unit in ('plasma-kwin_wayland', 'plasma-login-kwin_wayland')
              for dropin in ('vibeshine-kwin-gpu', 'vibepollo-kwin-session-environment'))
+FIXED.add('usr/lib/systemd/user/vibepollo-gnome.service')
 VERSION = re.compile(r'[1-9][0-9]*\.[0-9]+\.[0-9]+(?:-(?:alpha|beta|rc|stable)\.[0-9]+)?')
 TRANSACTION_ID = re.compile(r'[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}')
 CAPABILITIES = {

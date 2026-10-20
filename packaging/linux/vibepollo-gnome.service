@@ -1,0 +1,22 @@
+[Unit]
+Description=Vibepollo game stream host (GNOME desktop)
+Documentation=https://github.com/Nonary/Vibepollo/blob/master/docs/linux/fedora.md
+# Streams the user's existing GNOME desktop through the ScreenCast portal.
+# Plasma sessions are served by the machine-wide vibepollo-session-controller.
+PartOf=graphical-session.target
+After=graphical-session.target xdg-desktop-portal.service pipewire.service pipewire-pulse.service wireplumber.service
+Wants=xdg-desktop-portal.service pipewire.service wireplumber.service
+
+[Service]
+Type=simple
+# Skip every non-GNOME session; XDG_CURRENT_DESKTOP is a colon-separated list.
+ExecCondition=/usr/bin/sh -c 'case ":$${XDG_CURRENT_DESKTOP}:" in *:GNOME:*) exit 0 ;; esac; exit 1'
+Environment=VIBEPOLLO_DESKTOP_MODE=gnome
+ExecStart=/usr/bin/vibepollo
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=20
+
+[Install]
+WantedBy=graphical-session.target

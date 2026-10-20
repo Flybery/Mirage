@@ -590,21 +590,28 @@ install_kernel_headers() {
 check_desktop() {
   local plasma_hint='install plasma-meta or plasma-desktop'
   [[ "$package_backend" != dnf ]] || plasma_hint="install it with: sudo dnf group install kde-desktop"
+  local gnome=0
+  if package_installed gnome-shell; then gnome=1; fi
   if package_installed plasma-workspace || package_installed plasma-desktop; then
     ok "KDE Plasma is installed."
+  elif ((gnome)); then
+    ok "GNOME is installed. Vibepollo streams the GNOME desktop as a user service through the screen-sharing portal."
   else
-    fail "KDE Plasma is not installed. Vibepollo streams only a KDE Plasma 6 Wayland desktop (${plasma_hint})."
+    fail "Neither KDE Plasma nor GNOME is installed. Vibepollo streams a KDE Plasma 6 or GNOME Wayland desktop (${plasma_hint})."
+  fi
+  if ((gnome)); then
+    ok "GNOME sessions are streamed by the vibepollo-gnome user service; virtual displays are not available there yet."
   fi
   if package_installed sddm || package_installed plasma-login-manager; then
     ok "A supported login manager (SDDM or Plasma Login Manager) is installed."
   elif package_installed gdm; then
-    ok "GDM is installed. Choose the Plasma (Wayland) session at login; the GNOME login screen itself is not streamed."
+    ok "GDM is installed. Streaming starts after login; the GNOME login screen itself is not streamed."
   else
     warn "None of sddm, plasma-login-manager or gdm is installed. Vibepollo only attaches to Plasma sessions started by one of them."
   fi
   if [[ -x /usr/bin/kwin_wayland ]]; then
     ok "KWin Wayland is available."
-  else
+  elif ((gnome == 0)); then
     fail "/usr/bin/kwin_wayland is missing; the Plasma Wayland session is required."
   fi
 }
@@ -1234,6 +1241,21 @@ open_firewall() {
 
 reboot_required=0
 
+readonly DKMS_SIGNING_CERTIFICATE=/var/lib/dkms/mok.pub
+
+# True when the DKMS module-signing certificate is already queued for MOK
+# enrollment, so no new (interactive) enrollment request is needed.
+signing_key_enrollment_pending() {
+  local certificate=${1:-$DKMS_SIGNING_CERTIFICATE} fingerprint
+  command -v mokutil >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1 || return 1
+  [[ -f "$certificate" && ! -L "$certificate" ]] || return 1
+  fingerprint=$(openssl x509 -inform DER -in "$certificate" -noout -fingerprint -sha1 2>/dev/null ||
+    openssl x509 -in "$certificate" -noout -fingerprint -sha1 2>/dev/null) || return 1
+  fingerprint=${fingerprint#*=}
+  [[ "$fingerprint" =~ ^([0-9A-Fa-f]{2}:){19}[0-9A-Fa-f]{2}$ ]] || return 1
+  LC_ALL=C mokutil --list-new 2>/dev/null | tr 'A-F' 'a-f' | grep -qF -- "$(tr 'A-F' 'a-f' <<<"$fingerprint")"
+}
+
 install_virtual_driver() {
   local helper=${1:-$DRM_INSTALL} result=0 installed
   [[ -x "$helper" ]] || die "the package is missing the virtual-display installer: $helper"
@@ -1242,8 +1264,13 @@ install_virtual_driver() {
   if "$helper" status; then result=0; else result=$?; fi
   if [[ $result != 0 && $result != 4 ]]; then
     install_kernel_headers
-    log "Installing the virtual-display driver for ${kernel_release}"
-    if "$helper" install-package; then result=0; else result=$?; fi
+    if modinfo -k "$kernel_release" -F version vibeshine_drm >/dev/null 2>&1 && signing_key_enrollment_pending; then
+      # The module is built and signed; only the queued enrollment is missing.
+      result=5
+    else
+      log "Installing the virtual-display driver for ${kernel_release}"
+      if "$helper" install-package; then result=0; else result=$?; fi
+    fi
   fi
   case "$result" in
     0) ;;
@@ -1362,6 +1389,32 @@ repair_machine_setup() {
   ok 'Machine profile is configured and the session controller is enabled.'
 }
 
+readonly GNOME_USER_UNIT=vibepollo-gnome.service
+
+enable_gnome_user_service() {
+  local unit_root=${1:-/usr/lib/systemd/user} session user class
+  [[ -f "$unit_root/$GNOME_USER_UNIT" ]] || return 0
+  package_installed gnome-shell || return 0
+  if systemctl --global enable "$GNOME_USER_UNIT" >/dev/null 2>&1; then
+    ok "GNOME sessions stream through the ${GNOME_USER_UNIT} user service."
+  else
+    warn "Could not enable ${GNOME_USER_UNIT} for GNOME sessions; run: sudo systemctl --global enable ${GNOME_USER_UNIT}"
+    return 0
+  fi
+  # Start it in the current desktop session as well. The unit skips itself
+  # unless that session is GNOME, so a Plasma session is left untouched.
+  session=$(loginctl show-seat seat0 --property=ActiveSession --value 2>/dev/null) || return 0
+  [[ "$session" =~ ^[A-Za-z0-9_.-]+$ ]] || return 0
+  user=$(loginctl show-session "$session" --property=Name --value 2>/dev/null) || return 0
+  class=$(loginctl show-session "$session" --property=Class --value 2>/dev/null) || return 0
+  [[ "$class" == user && "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || return 0
+  if systemctl --user --machine="${user}@.host" start "$GNOME_USER_UNIT" >/dev/null 2>&1; then
+    ok "Started ${GNOME_USER_UNIT} for ${user}; on GNOME, approve the screen-sharing request once."
+  else
+    warn "Could not start ${GNOME_USER_UNIT} for ${user} now; it starts at the next GNOME login."
+  fi
+}
+
 check_services() {
   if systemctl is-enabled --quiet vibepollo-session-controller.service 2>/dev/null; then
     ok 'vibepollo-session-controller.service is enabled.'
@@ -1380,7 +1433,11 @@ print_summary() {
   fi
   printf '    %d. Open https://localhost:47990 on this machine, create the Web UI login, then pair Moonlight with the PIN.\n' "$step"; step=$((step + 1))
   printf '       Pairing works at the login screen; enter the PIN in the Web UI from another device.\n'
-  printf '    %d. Log in to your KDE Plasma (Wayland) desktop to stream the desktop.\n' "$step"; step=$((step + 1))
+  if package_installed gnome-shell; then
+    printf '    %d. Log in to GNOME and approve the screen-sharing request once (allow it to be remembered).\n' "$step"; step=$((step + 1))
+  else
+    printf '    %d. Log in to your KDE Plasma (Wayland) desktop to stream the desktop.\n' "$step"; step=$((step + 1))
+  fi
   printf '    %d. Log out and back in once (or restart PipeWire) so the audio quantum drop-in takes effect.\n' "$step"; step=$((step + 1))
   printf '\n    Status:  sudo systemctl status vibepollo-session-controller.service vibepollo.service\n'
   printf '    Logs:    sudo journalctl -u vibepollo-session-controller.service -u vibepollo.service -b\n'
@@ -1421,6 +1478,7 @@ main() {
   install_virtual_driver
   install_dualsense_driver
   repair_machine_setup || die 'machine setup recovery failed; installation is not complete'
+  enable_gnome_user_service
   open_firewall
   check_driver_state
   check_services

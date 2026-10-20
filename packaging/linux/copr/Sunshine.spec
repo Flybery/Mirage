@@ -8444,6 +8444,7 @@ fi
 /usr/src/vibeshine-ds5-*
 
 # KWin user-unit drop-ins; Linux does not install the generic app service.
+%{_userunitdir}/vibepollo-gnome.service
 %{_userunitdir}/plasma-kwin_wayland.service.d/vibeshine-kwin-gpu.conf
 %{_userunitdir}/plasma-kwin_wayland.service.d/vibepollo-kwin-session-environment.conf
 %{_userunitdir}/plasma-login-kwin_wayland.service.d/vibeshine-kwin-gpu.conf

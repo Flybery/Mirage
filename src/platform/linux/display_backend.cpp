@@ -3,6 +3,7 @@
  * @brief Linux display backend selection and managed desktop implementation.
  */
 #include "display_backend.h"
+#include "desktop_mode.h"
 #include "private_display.h"
 
 #include <display_device/json.h>
@@ -47,6 +48,7 @@ namespace platf::linux_display {
 #ifdef SUNSHINE_BUILD_GAMESCOPE
   const backend_t &gamescope_backend();
 #endif
+  const backend_t &gnome_backend();
 
   const backend_t &backend() {
 #ifdef SUNSHINE_BUILD_GAMESCOPE
@@ -54,6 +56,9 @@ namespace platf::linux_display {
       return gamescope_backend();
     }
 #endif
+    if (linux_desktop::gnome_mode()) {
+      return gnome_backend();
+    }
     static const desktop_backend_t desktop;
     return desktop;
   }

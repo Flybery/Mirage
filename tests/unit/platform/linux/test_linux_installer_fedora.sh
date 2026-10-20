@@ -171,6 +171,54 @@ remove_vibepollo > /dev/null 2>&1
 grep -Fxq 'dnf remove vibepollo' "$calls" || fail_test 'Fedora removal did not use dnf'
 printf 'PASS: Fedora removal uses dnf and the package scripts.\n'
 
+# --- Queued Secure Boot enrollment -------------------------------------------
+(
+  certificate="$fixture/mok.pub"
+  touch "$certificate"
+  openssl() { printf 'SHA1 Fingerprint=AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01\n'; }
+  mokutil() { printf '%s\n' "$pending_list"; }
+  pending_list='[key 1]
+SHA1 Fingerprint: ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01'
+  signing_key_enrollment_pending "$certificate" || fail_test 'a queued DKMS key was not recognized'
+  pending_list='SHA1 Fingerprint: 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00'
+  if signing_key_enrollment_pending "$certificate"; then fail_test 'another queued key was accepted'; fi
+  pending_list=''
+  if signing_key_enrollment_pending "$certificate"; then fail_test 'an empty MOK queue was accepted'; fi
+  if signing_key_enrollment_pending "$fixture/absent.pub"; then fail_test 'a missing certificate was accepted'; fi
+)
+printf 'PASS: an already queued DKMS signing key is recognized without prompting again.\n'
+
+# --- GNOME user service ------------------------------------------------------
+(
+  unit_root="$fixture/user-units"
+  mkdir -p "$unit_root"
+  touch "$unit_root/vibepollo-gnome.service"
+  systemctl() { printf 'systemctl %s\n' "$*" >> "$calls"; }
+  loginctl() {
+    case "$*" in
+      *ActiveSession*) printf '5\n' ;;
+      *Name*) printf 'bo\n' ;;
+      *Class*) printf '%s\n' "$session_class" ;;
+    esac
+  }
+  reset_scenario
+  installed_rpms[gnome-shell]=50.5-1.fc44.x86_64
+  session_class=user
+  enable_gnome_user_service "$unit_root" > /dev/null 2>&1
+  grep -Fxq 'systemctl --global enable vibepollo-gnome.service' "$calls" || fail_test 'GNOME unit was not enabled'
+  grep -Fxq 'systemctl --user --machine=bo@.host start vibepollo-gnome.service' "$calls" ||
+    fail_test 'GNOME unit was not started for the logged-in user'
+  reset_scenario
+  installed_rpms[gnome-shell]=50.5-1.fc44.x86_64
+  session_class=greeter
+  enable_gnome_user_service "$unit_root" > /dev/null 2>&1
+  ! grep -q -- '--machine=' "$calls" || fail_test 'the GNOME unit was started for a greeter session'
+  reset_scenario
+  enable_gnome_user_service "$unit_root" > /dev/null 2>&1
+  ! grep -q '^systemctl' "$calls" || fail_test 'the GNOME unit was enabled without GNOME installed'
+)
+printf 'PASS: GNOME hosts enable the user service and start it in the active desktop session.\n'
+
 # --- Main step order ---------------------------------------------------------
 (
   trace="$fixture/main-trace"
@@ -178,7 +226,7 @@ printf 'PASS: Fedora removal uses dnf and the package scripts.\n'
   package_backend=''
   for step in parse_args require_root require_pacman run_checks check_session_restart install_vibepollo \
     check_private_host_security install_virtual_driver install_dualsense_driver repair_machine_setup \
-    open_firewall check_driver_state check_services print_summary; do
+    enable_gnome_user_service open_firewall check_driver_state check_services print_summary; do
     eval "$step() { :; }"
   done
   require_dnf() { printf 'require_dnf\n' >> "$trace"; }

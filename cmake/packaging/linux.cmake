@@ -303,6 +303,10 @@ else()
                     "${CMAKE_SOURCE_DIR}/packaging/linux/vibepollo-session-controller.service"
                     "${CMAKE_SOURCE_DIR}/packaging/linux/vibepollo.service"
                     DESTINATION "${VIBESHINE_SYSTEM_UNIT_INSTALL_DIR}")
+            # GNOME sessions stream the existing desktop from a user unit; it
+            # skips every other desktop, which the machine controller serves.
+            install(FILES "${CMAKE_SOURCE_DIR}/packaging/linux/vibepollo-gnome.service"
+                    DESTINATION "${SYSTEMD_USER_UNIT_INSTALL_DIR}")
             # Both the Plasma desktop and Plasma Login greeter start their own
             # KWin instance.  Publish each compositor's generated Wayland/X11
             # credentials into its corresponding user manager so the machine
