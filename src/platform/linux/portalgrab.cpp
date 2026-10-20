@@ -3,11 +3,13 @@
  * @brief Definitions for XDG portal grab.
  */
 // local includes
+#include "gnome_virtual_display.h"
 #include "pipewire.cpp"
 
 namespace {
   // Portal configuration constants
   constexpr uint32_t SOURCE_TYPE_MONITOR = 1;
+  constexpr uint32_t SOURCE_TYPE_VIRTUAL = 4;
   constexpr uint32_t CURSOR_MODE_EMBEDDED = 2;
 
   constexpr uint32_t PERSIST_FORGET = 0;
@@ -35,49 +37,75 @@ namespace portal {
   // Forward declarations
   class runtime_t;
 
+  /** A persisted portal restore token. Monitor and virtual-monitor sessions
+   *  keep separate tokens so neither selection invalidates the other. */
   class restore_token_t {
   public:
-    static std::string get() {
-      return *token_;
+    explicit restore_token_t(std::string_view file_name):
+        file_name_ {file_name} {
     }
 
-    static void set(std::string_view value) {
-      *token_ = value;
+    /** Token for sessions that capture existing monitors. */
+    static restore_token_t &monitor() {
+      static restore_token_t token {"portal_token"};
+      return token;
     }
 
-    static bool empty() {
-      return token_->empty();
+    /** Token for sessions that create a GNOME virtual monitor. */
+    static restore_token_t &virtual_monitor() {
+      static restore_token_t token {"portal_token_virtual"};
+      return token;
     }
 
-    static void load() {
+    std::string get() const {
+      std::lock_guard lock {mutex_};
+      return token_;
+    }
+
+    void set(std::string_view value) {
+      std::lock_guard lock {mutex_};
+      token_ = value;
+    }
+
+    bool empty() const {
+      std::lock_guard lock {mutex_};
+      return token_.empty();
+    }
+
+    void load() {
       std::ifstream file(get_file_path());
       if (file.is_open()) {
-        std::getline(file, *token_);
-        if (!token_->empty()) {
-          BOOST_LOG(info) << "[portalgrab] Loaded portal restore token from disk"sv;
+        std::string value;
+        std::getline(file, value);
+        set(value);
+        if (!value.empty()) {
+          BOOST_LOG(info) << "[portalgrab] Loaded portal restore token from disk ("sv << file_name_ << ")"sv;
         }
       }
     }
 
-    static void save() {
-      if (token_->empty()) {
+    void save() {
+      const auto value = get();
+      if (value.empty()) {
         return;
       }
       std::ofstream file(get_file_path());
       if (file.is_open()) {
-        file << *token_;
-        BOOST_LOG(info) << "[portalgrab] Saved portal restore token to disk"sv;
+        file << value;
+        BOOST_LOG(info) << "[portalgrab] Saved portal restore token to disk ("sv << file_name_ << ")"sv;
       } else {
         BOOST_LOG(warning) << "[portalgrab] Failed to save portal restore token"sv;
       }
     }
 
   private:
-    static inline const std::unique_ptr<std::string> token_ = std::make_unique<std::string>();
-
-    static std::string get_file_path() {
-      return platf::appdata().string() + "/portal_token";
+    std::string get_file_path() const {
+      return platf::appdata().string() + "/" + file_name_;
     }
+
+    std::string file_name_;
+    mutable std::mutex mutex_;
+    std::string token_;
   };
 
   struct dbus_response_t {
@@ -157,7 +185,7 @@ namespace portal {
     }
 
     int init() {
-      restore_token_t::load();
+      token().load();
 
       conn = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
       if (!conn) {
@@ -181,8 +209,9 @@ namespace portal {
       g_autofree gchar *session_token = nullptr;
       create_session_path(conn, nullptr, &session_token);
 
-      // Try combined RemoteDesktop + ScreenCast session first
-      bool use_screencast_only = !try_remote_desktop_session(loop, &session_path, session_token);
+      // Try combined RemoteDesktop + ScreenCast session first. A virtual
+      // monitor needs no portal input devices (input goes through uinput).
+      bool use_screencast_only = virtual_source || !try_remote_desktop_session(loop, &session_path, session_token);
 
       // Fall back to ScreenCast-only if RemoteDesktop failed
       if (use_screencast_only && try_screencast_only_session(loop, &session_path) < 0) {
@@ -267,13 +296,19 @@ namespace portal {
     }
 
     std::vector<pipewire_streaminfo_t> pipewire_streams;
-    int pipewire_fd;
+    int pipewire_fd = -1;
+    /** Request a new GNOME virtual monitor instead of existing monitors. */
+    bool virtual_source = false;
 
   private:
-    GDBusConnection *conn;
-    GDBusProxy *screencast_proxy;
-    GDBusProxy *remote_desktop_proxy;
+    GDBusConnection *conn = nullptr;
+    GDBusProxy *screencast_proxy = nullptr;
+    GDBusProxy *remote_desktop_proxy = nullptr;
     std::string session_handle;
+
+    restore_token_t &token() const {
+      return virtual_source ? restore_token_t::virtual_monitor() : restore_token_t::monitor();
+    }
 
     int create_portal_session(GMainLoop *loop, gchar **session_path_out, const gchar *session_token, bool use_screencast) {
       GDBusProxy *proxy = use_screencast ? screencast_proxy : remote_desktop_proxy;
@@ -355,8 +390,8 @@ namespace portal {
       g_variant_builder_add(&builder, "{sv}", "handle_token", g_variant_new_string(request_token));
       g_variant_builder_add(&builder, "{sv}", "types", g_variant_new_uint32(TYPE_KEYBOARD | TYPE_POINTER | TYPE_TOUCHSCREEN));
       g_variant_builder_add(&builder, "{sv}", "persist_mode", g_variant_new_uint32(PERSIST_UNTIL_REVOKED));
-      if (!restore_token_t::empty()) {
-        g_variant_builder_add(&builder, "{sv}", "restore_token", g_variant_new_string(restore_token_t::get().c_str()));
+      if (!token().empty()) {
+        g_variant_builder_add(&builder, "{sv}", "restore_token", g_variant_new_string(token().get().c_str()));
       }
       g_variant_builder_close(&builder);
 
@@ -403,13 +438,14 @@ namespace portal {
       g_variant_builder_add(&builder, "o", session_path);
       g_variant_builder_open(&builder, G_VARIANT_TYPE("a{sv}"));
       g_variant_builder_add(&builder, "{sv}", "handle_token", g_variant_new_string(request_token));
-      g_variant_builder_add(&builder, "{sv}", "types", g_variant_new_uint32(SOURCE_TYPE_MONITOR));
+      g_variant_builder_add(&builder, "{sv}", "types", g_variant_new_uint32(virtual_source ? SOURCE_TYPE_VIRTUAL : SOURCE_TYPE_MONITOR));
       g_variant_builder_add(&builder, "{sv}", "cursor_mode", g_variant_new_uint32(CURSOR_MODE_EMBEDDED));
-      g_variant_builder_add(&builder, "{sv}", "multiple", g_variant_new_boolean(TRUE));
+      // One virtual monitor per session; Mutter sizes it from the stream.
+      g_variant_builder_add(&builder, "{sv}", "multiple", g_variant_new_boolean(virtual_source ? FALSE : TRUE));
       if (persist) {
         g_variant_builder_add(&builder, "{sv}", "persist_mode", g_variant_new_uint32(PERSIST_UNTIL_REVOKED));
-        if (!restore_token_t::empty()) {
-          g_variant_builder_add(&builder, "{sv}", "restore_token", g_variant_new_string(restore_token_t::get().c_str()));
+        if (!token().empty()) {
+          g_variant_builder_add(&builder, "{sv}", "restore_token", g_variant_new_string(token().get().c_str()));
         }
       }
       g_variant_builder_close(&builder);
@@ -498,17 +534,23 @@ namespace portal {
         return -1;
       }
 
-      if (const gchar *new_token = nullptr; g_variant_lookup(dict, "restore_token", "s", &new_token) && new_token && new_token[0] != '\0' && restore_token_t::get() != new_token) {
-        restore_token_t::set(new_token);
-        restore_token_t::save();
+      if (const gchar *new_token = nullptr; g_variant_lookup(dict, "restore_token", "s", &new_token) && new_token && new_token[0] != '\0' && token().get() != new_token) {
+        token().set(new_token);
+        token().save();
       }
 
       GVariantIter iter;
-      const auto wl_monitors = wl::monitors();
+      const auto wl_monitors = virtual_source ? decltype(wl::monitors()) {} : wl::monitors();
       int out_pipewire_node;
       g_autoptr(GVariant) value = nullptr;
       g_variant_iter_init(&iter, streams);
       while (g_variant_iter_next(&iter, "(u@a{sv})", &out_pipewire_node, &value)) {
+        if (virtual_source) {
+          // A virtual monitor has no size until the consumer negotiates one.
+          out_pipewire_streams.emplace_back(pipewire_streaminfo_t {out_pipewire_node, 0, 0, 0, 0});
+          g_clear_pointer(&value, g_variant_unref);
+          continue;
+        }
         int out_width;
         int out_height;
         bool result = g_variant_lookup(value, "size", "(ii)", &out_width, &out_height, nullptr);
@@ -622,6 +664,11 @@ namespace portal {
   class portal_t: public pipewire::pipewire_display_t {
   public:
     int configure_stream(const std::string &display_name, int &out_pipewire_fd, uint32_t &out_pipewire_node, uint64_t &out_pipewire_object_serial [[maybe_unused]]) override {
+      // A GNOME Remote Monitor target asks Mutter for a new virtual monitor
+      // sized from the stream we negotiate; it exists while this stream runs.
+      const auto virtual_target = platf::gnome_virtual_display::parse_target(display_name);
+      dbus.virtual_source = virtual_target.has_value();
+
       // Connect DBus portal session
       if (dbus.init() < 0) {
         BOOST_LOG(error) << "[portalgrab] Failed to connect to dbus. portal_t setup failed.";
@@ -639,6 +686,21 @@ namespace portal {
       if (streams.empty()) {
         BOOST_LOG(error) << "[portalgrab] No streams found on portal. portal_t setup failed.";
         return -1;
+      }
+      if (virtual_target) {
+        pipewire.set_negotiate_maxframerate(negotiate_maxframerate.load());
+        pipewire.set_exact_size(true);
+        out_pipewire_fd = dbus.pipewire_fd;
+        out_pipewire_node = streams.front().pipewire_node;
+        this->offset_x = 0;
+        this->offset_y = 0;
+        this->width = virtual_target->width;
+        this->height = virtual_target->height;
+        this->logical_width = virtual_target->width;
+        this->logical_height = virtual_target->height;
+        BOOST_LOG(info) << "[portalgrab] Requesting a GNOME virtual monitor of "sv << width << "x"sv << height
+                        << " for client "sv << virtual_target->client_uuid;
+        return 0;
       }
       for (auto &stream_ : streams) {
         if (stream_.match_display_name(display_name)) {

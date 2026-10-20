@@ -393,6 +393,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             "${CMAKE_SOURCE_DIR}/src/platform/linux/display_backend.cpp"
             "${CMAKE_SOURCE_DIR}/src/platform/linux/desktop_mode.h"
             "${CMAKE_SOURCE_DIR}/src/platform/linux/gnome_display_backend.cpp"
+            "${CMAKE_SOURCE_DIR}/src/platform/linux/gnome_virtual_display.h"
+            "${CMAKE_SOURCE_DIR}/src/platform/linux/gnome_virtual_display.cpp"
             "${CMAKE_SOURCE_DIR}/src/platform/linux/private_display_mode_client.h"
             "${CMAKE_SOURCE_DIR}/src/platform/linux/private_display_mode_client.cpp"
             "${CMAKE_SOURCE_DIR}/src/platform/linux/private_display_restore_policy.h"

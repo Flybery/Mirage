@@ -401,6 +401,13 @@ namespace pipewire {
       gamescope_requested_size_ = enabled;
     }
 
+    /** Offer only the preferred size. A virtual-monitor producer (Mutter's
+     *  ScreenCast VIRTUAL source) sizes the new monitor from the negotiated
+     *  size; a range would let it fall back to its own default. */
+    void set_exact_size(bool enabled) {
+      exact_size_ = enabled;
+    }
+
     void set_force_hdr10_formats(bool enabled) {
       force_hdr10_formats_ = enabled;
     }
@@ -423,6 +430,7 @@ namespace pipewire {
     uint64_t object_serial = SPA_ID_INVALID;
     bool negotiate_maxframerate_ = true;
     bool gamescope_requested_size_ = false;
+    bool exact_size_ = false;
     bool force_sdr_formats_ = false;
     bool force_hdr10_formats_ = false;
 
@@ -439,7 +447,11 @@ namespace pipewire {
       spa_pod_builder_add(b, SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video), 0);
       spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw), 0);
       spa_pod_builder_add(b, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
-      spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size, SPA_POD_CHOICE_RANGE_Rectangle(&sizes[0], &sizes[1], &sizes[2]), 0);
+      if (exact_size_) {
+        spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&sizes[0]), 0);
+      } else {
+        spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size, SPA_POD_CHOICE_RANGE_Rectangle(&sizes[0], &sizes[1], &sizes[2]), 0);
+      }
       if (gamescope_requested_size_) {
         // Valve's private SPA_FORMAT_VIDEO_requested_size property.
         spa_pod_builder_add(b, 0x70000, SPA_POD_Rectangle(&sizes[0]), 0);

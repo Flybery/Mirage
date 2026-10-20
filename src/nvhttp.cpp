@@ -76,6 +76,8 @@
   #include "platform/windows/virtual_display.h"
   #include "platform/windows/virtual_display_cleanup.h"
 #elif defined(__linux__)
+  #include "platform/linux/desktop_mode.h"
+  #include "platform/linux/gnome_virtual_display.h"
   #include "platform/linux/private_display.h"
   #include "platform/linux/routed_link.h"
   #include "platform/linux/mangohud_policy.h"
@@ -680,7 +682,40 @@ namespace nvhttp {
       }
     }
 
+    void register_gnome_remote_monitor_runtime() {
+      // GNOME: each Remote Monitor is a ScreenCast virtual monitor that Mutter
+      // creates for the capture stream and places itself (extended to the
+      // right). There is no KScreen/VKMS connector to reserve or compose.
+      namespace gnome = platf::gnome_virtual_display;
+      remote_display_topology::instance().set_runtime_callbacks({
+        .create_or_reclaim = [](const std::string &client_uuid, const std::string &, const remote_display_topology::mode_t &mode) {
+          gnome::register_client(client_uuid, mode.width, mode.height, mode.refresh_hz);
+          return true;
+        },
+        .resolve_mode = [](const std::string &, remote_display_topology::mode_t &mode) {
+          mode.hdr = false;  // Mutter's virtual monitor streams are SDR.
+        },
+        .apply_composed_topology = [](const std::vector<remote_display_topology::node_t> &) {
+          return true;
+        },
+        .exact_target_has_current_mode_and_dxgi = [](const std::string &client_uuid, const remote_display_topology::mode_t &mode) -> std::optional<std::string> {
+          gnome::register_client(client_uuid, mode.width, mode.height, mode.refresh_hz);
+          return gnome::target_name(client_uuid, mode.width, mode.height, mode.refresh_hz);
+        },
+        .remove_owned_display = [](const std::string &client_uuid) {
+          gnome::remove_client(client_uuid);
+          return true;
+        },
+        .client_identity_capacity = [] {
+          return static_cast<std::size_t>(config::video.virtual_display_max_clients);
+        },
+      });
+    }
+
     void register_remote_monitor_runtime() {
+      if (platf::linux_desktop::gnome_mode()) {
+        register_gnome_remote_monitor_runtime();
+      } else {
       remote_display_topology::instance().set_runtime_callbacks({
         .create_or_reclaim = [](const std::string &client_uuid, const std::string &, const remote_display_topology::mode_t &mode) {
           return platf::linux_private_display::remote_create_or_reclaim(client_uuid, mode);
@@ -693,6 +728,7 @@ namespace nvhttp {
           return std::min(static_cast<std::size_t>(config::video.virtual_display_max_clients), platf::linux_private_display::client_output_capacity());
         },
       });
+      }
       remote_display_topology::instance().set_plaintext_rtsp_warning_provider([](const std::string &) {
         return rtsp_stream::plaintext_route_warning();
       });

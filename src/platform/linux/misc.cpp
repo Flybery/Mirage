@@ -53,6 +53,7 @@
 
 // local includes
 #include "desktop_mode.h"
+#include "gnome_virtual_display.h"
 #include "graphics.h"
 #include "misc.h"
 #include "render_device.h"
@@ -1358,7 +1359,14 @@ namespace platf {
 #endif
 #ifdef SUNSHINE_BUILD_PORTAL
     if (sources[source::PORTAL]) {
-      return portal_display_names();
+      auto names = portal_display_names();
+      // GNOME Remote Monitor targets exist only while their capture stream
+      // runs, so publish them for exact-output selection before capture.
+      if (linux_desktop::gnome_mode()) {
+        auto virtual_targets = gnome_virtual_display::targets();
+        names.insert(names.end(), virtual_targets.begin(), virtual_targets.end());
+      }
+      return names;
     }
 #endif
 #ifdef SUNSHINE_BUILD_KWIN
@@ -1483,6 +1491,14 @@ namespace platf {
     auto display_name = requested_display_name;
 #ifdef __linux__
     display_name = linux_display::backend().capture_target(requested_display_name);
+#endif
+#ifdef SUNSHINE_BUILD_PORTAL
+    // A GNOME Remote Monitor is a ScreenCast virtual monitor; only the portal
+    // can create it, and no KScreen/KMS output by that name exists.
+    if (sources[source::PORTAL] && gnome_virtual_display::parse_target(display_name)) {
+      BOOST_LOG(info) << "Screencasting a GNOME virtual monitor with XDG portal"sv;
+      return portal_display(hwdevice_type, display_name, config);
+    }
 #endif
     // Keep KMS as first element to check before dropping CAP_SYS_ADMIN
 #ifdef SUNSHINE_BUILD_DRM
