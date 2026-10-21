@@ -197,6 +197,12 @@
   border-radius: var(--vs-radius-control);
   background: var(--vs-input-bg, var(--vs-color-bg-canvas));
 }
+@media (hover: hover) and (pointer: fine) {
+  .theme-picker__options .icon-button {
+    inline-size: 28px;
+    min-inline-size: 28px;
+  }
+}
 .theme-picker__options .icon-button[aria-pressed='true'] {
   background: var(--vs-color-bg-raised);
   color: var(--vs-color-text-primary);

@@ -5,10 +5,10 @@
   box-sizing: border-box;
 }
 
-/* Material: a blurred gradient backdrop behind frosted-glass layers. */
+/* Material: a gradient backdrop behind frosted-glass layers. Glass and dark
+   share the dark tokens; glass adds diffused colored light behind them. */
 :root,
-[data-theme='dark'] {
-  /* Warm ember, mauve and slate light diffused behind frosted glass. */
+[data-theme='glass'] {
   --vs-backdrop-image:
     linear-gradient(118deg, transparent 34%, rgb(214 186 206 / 0.07) 46%, transparent 60%),
     radial-gradient(42% 60% at 2% 4%, rgb(206 112 76 / 0.42), transparent 72%),
@@ -19,6 +19,10 @@
     linear-gradient(160deg, #23252f 0%, #191b23 55%, #14161c 100%);
   --vs-glass-blur: blur(24px) saturate(140%);
   --vs-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+[data-theme='dark'] {
+  --vs-backdrop-image: linear-gradient(180deg, #1c1e25 0%, #15171d 100%);
 }
 
 [data-theme='light'] {

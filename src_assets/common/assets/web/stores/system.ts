@@ -31,7 +31,7 @@ export interface HostMetadata extends ReadinessMetadata {
   [key: string]: unknown;
 }
 
-export type ThemePreference = 'auto' | 'dark' | 'light';
+export type ThemePreference = 'glass' | 'auto' | 'dark' | 'light';
 
 const defaultAuth: AuthStatus = {
   authenticated: false,
@@ -46,7 +46,9 @@ function storedBoolean(key: string, fallback: boolean): boolean {
 
 function readThemePreference(): ThemePreference {
   const value = localStorage.getItem('vibepollo.theme');
-  return value === 'dark' || value === 'light' || value === 'auto' ? value : 'auto';
+  return value === 'dark' || value === 'light' || value === 'auto' || value === 'glass'
+    ? value
+    : 'glass';
 }
 
 export const useSystemStore = defineStore('system', () => {

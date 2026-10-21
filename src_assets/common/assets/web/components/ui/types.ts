@@ -13,6 +13,7 @@ export type UiIconName =
   | 'edit'
   | 'external-link'
   | 'gamepad'
+  | 'glass'
   | 'help'
   | 'info'
   | 'integrations'

@@ -47,6 +47,7 @@ const navigationGroups = [
   },
 ] as const;
 const themes = [
+  { value: 'glass', icon: 'glass' },
   { value: 'light', icon: 'sun' },
   { value: 'dark', icon: 'moon' },
   { value: 'auto', icon: 'devices' },

@@ -2541,6 +2541,7 @@
       "theme": "Theme: {theme}",
       "theme_auto": "System",
       "theme_dark": "Dark",
+      "theme_glass": "Glass",
       "theme_light": "Light",
       "workspace": "Workspace",
       "monitor": "Monitor",
