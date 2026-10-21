@@ -33,6 +33,11 @@
   min-block-size: var(--vs-size-control-md);
   gap: var(--vs-space-control-gap);
   padding-inline: var(--vs-button-padding-inline, var(--vs-space-16));
+  font-family: var(--vs-type-family-mono);
+  font-size: 12px;
+  font-weight: var(--vs-type-weight-regular);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .vs-button--compact,
@@ -69,17 +74,24 @@
   inline-size: var(--vs-size-control-touch);
 }
 
+/* The one glossy accent surface: a lit top edge over the orange. */
 .vs-button--primary,
 .button--primary {
-  border-color: var(--vs-button-primary-bg, var(--vs-color-accent-default));
-  background: var(--vs-button-primary-bg, var(--vs-color-accent-default));
+  --vs-gloss-base: var(--vs-button-primary-bg, var(--vs-color-accent-default));
+  border-color: var(--vs-gloss-base);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0.04) 52%, rgb(0 0 0 / 0.08)),
+    var(--vs-gloss-base);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 4px 18px color-mix(in srgb, var(--vs-gloss-base) 28%, transparent);
   color: var(--vs-button-primary-fg, var(--vs-color-text-on-accent));
 }
 
 .vs-button--primary:hover:not(:disabled),
 .button--primary:hover:not(:disabled) {
-  border-color: var(--vs-button-primary-bg-hover, var(--vs-color-accent-hover));
-  background: var(--vs-button-primary-bg-hover, var(--vs-color-accent-hover));
+  --vs-gloss-base: var(--vs-button-primary-bg-hover, var(--vs-color-accent-hover));
+  border-color: var(--vs-gloss-base);
 }
 
 .vs-button--secondary,
@@ -91,7 +103,7 @@
 
 .vs-button--secondary:hover:not(:disabled),
 .button--secondary:hover:not(:disabled) {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-text-muted);
   background: var(--vs-button-secondary-bg-hover, var(--vs-color-bg-subtle));
 }
 
@@ -114,16 +126,15 @@
 
 .vs-button--danger,
 .button--danger {
-  border-color: var(--vs-button-danger-bg, var(--vs-color-status-danger));
-  background: var(--vs-button-danger-bg, var(--vs-color-status-danger));
-  color: var(--vs-button-danger-fg, var(--vs-color-text-on-accent));
+  border-color: color-mix(in srgb, var(--vs-color-status-danger) 64%, transparent);
+  background: color-mix(in srgb, var(--vs-color-status-danger) 8%, transparent);
+  color: var(--vs-color-status-danger);
 }
 
 .vs-button--danger:hover:not(:disabled),
 .button--danger:hover:not(:disabled) {
-  border-color: var(--vs-button-danger-bg-hover, var(--vs-color-status-danger));
-  background: var(--vs-button-danger-bg-hover, var(--vs-color-status-danger));
-  filter: brightness(1.08);
+  border-color: var(--vs-color-status-danger);
+  background: color-mix(in srgb, var(--vs-color-status-danger) 16%, transparent);
 }
 
 .vs-button:active:not(:disabled),
@@ -139,6 +150,7 @@
 .icon-button:disabled {
   border-color: var(--vs-color-border-subtle);
   background: var(--vs-color-bg-subtle);
+  box-shadow: none;
   color: var(--vs-color-text-muted);
   filter: none;
 }
@@ -182,12 +194,16 @@
   padding: var(--vs-space-2) var(--vs-space-8);
   border: var(--vs-border-width) solid color-mix(in srgb, var(--vs-status-color) 28%, transparent);
   border-radius: var(--vs-radius-pill);
-  background: color-mix(in srgb, var(--vs-status-color) 8%, transparent);
+  background: color-mix(in srgb, var(--vs-status-color) 6%, transparent);
   color: var(--vs-status-color);
-  font-size: var(--vs-type-size-metadata);
+  font-family: var(--vs-type-family-mono);
+  font-size: 11px;
   font-weight: var(--vs-type-weight-medium);
   line-height: var(--vs-type-line-height-metadata);
-  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Uppercase mono runs wide; long states wrap instead of overflowing narrow screens. */
+  max-inline-size: 100%;
 }
 
 .vs-status-badge--compact {
@@ -234,7 +250,7 @@
     color-mix(in srgb, var(--vs-alert-color) 54%, var(--vs-color-border-subtle));
   border-inline-start-width: var(--vs-border-emphasis-width);
   border-radius: var(--vs-radius-control);
-  background: color-mix(in srgb, var(--vs-alert-color) 8%, var(--vs-color-bg-surface));
+  background: color-mix(in srgb, var(--vs-alert-color) 6%, var(--vs-color-bg-surface));
   color: var(--vs-color-text-primary);
 }
 
@@ -402,6 +418,7 @@
   border: var(--vs-border-width) solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-card);
   background: var(--vs-color-bg-surface);
+  box-shadow: var(--vs-glass-edge);
 }
 
 .vs-settings-group > .vs-setting-row + .vs-setting-row {
@@ -493,17 +510,19 @@
 
 .vs-page-header__eyebrow {
   color: var(--vs-color-text-muted);
-  font-size: var(--vs-type-size-metadata);
-  font-weight: var(--vs-type-weight-semibold);
+  font-family: var(--vs-type-family-mono);
+  font-size: 11px;
+  font-weight: var(--vs-type-weight-medium);
   line-height: var(--vs-type-line-height-metadata);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .vs-page-header__title {
   font-size: var(--vs-type-size-page);
+  font-weight: var(--vs-type-weight-bold);
   line-height: var(--vs-type-line-height-page);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
 }
 
 .vs-page-header--compact .vs-page-header__title {
@@ -546,6 +565,7 @@
 
 .vs-dialog::backdrop {
   background: var(--vs-overlay-backdrop, var(--vs-color-overlay-backdrop));
+  backdrop-filter: blur(6px);
   animation: vs-dialog-backdrop-in var(--vs-motion-duration-overlay)
     var(--vs-motion-easing-standard);
 }
@@ -554,10 +574,11 @@
   max-block-size: inherit;
   overflow: auto;
   padding: var(--vs-dialog-padding, var(--vs-space-24));
-  border: var(--vs-border-width) solid var(--vs-color-border-strong);
+  border: var(--vs-border-width) solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-dialog);
   background: var(--vs-dialog-bg, var(--vs-color-bg-raised));
-  box-shadow: var(--vs-shadow-overlay);
+  box-shadow: var(--vs-glass-edge), var(--vs-shadow-overlay);
+  backdrop-filter: var(--vs-glass-blur, blur(24px));
   animation: vs-dialog-in var(--vs-motion-duration-overlay) var(--vs-motion-easing-standard);
 }
 

@@ -173,7 +173,7 @@ async function submit(): Promise<void> {
   height: 40px;
   border-radius: var(--vs-radius-control);
   background: var(--vs-color-bg-subtle);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 
 h1 {

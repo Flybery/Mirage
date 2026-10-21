@@ -1152,14 +1152,14 @@ onBeforeUnmount(() => {
   padding: 0 var(--vs-space-8);
   border: 0;
   background: transparent;
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font: inherit;
   font-size: var(--vs-type-size-control);
   cursor: pointer;
 }
 
 .device-filter-clear:hover {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   text-decoration: underline;
 }
 

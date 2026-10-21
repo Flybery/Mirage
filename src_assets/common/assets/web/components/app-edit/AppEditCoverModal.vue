@@ -241,7 +241,7 @@ onBeforeUnmount(() => hideDialog(false));
 
 .cover-picker__option:hover:not(:disabled),
 .cover-picker__option:focus-visible {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
   background: var(--vs-color-bg-subtle);
 }
 

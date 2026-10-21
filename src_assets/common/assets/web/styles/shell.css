@@ -1,7 +1,7 @@
 .app-shell {
   min-height: 100vh;
   padding-left: var(--vs-navigation-width-expanded);
-  background: var(--vs-color-bg-canvas);
+  background: transparent;
 }
 .sidebar {
   position: fixed;
@@ -13,6 +13,7 @@
   flex-direction: column;
   border-right: 1px solid var(--vs-color-border-subtle);
   background: var(--vs-color-bg-surface);
+  backdrop-filter: var(--vs-glass-blur, blur(24px));
 }
 .sidebar__header {
   display: flex;
@@ -35,14 +36,18 @@
   display: block;
 }
 .brand__name {
-  font-size: 18px;
-  letter-spacing: -0.025em;
+  font-size: 20px;
+  font-weight: var(--vs-type-weight-bold);
+  letter-spacing: -0.045em;
 }
 .brand__description {
   margin-top: var(--vs-space-2);
   color: var(--vs-color-text-muted);
-  font-size: 12px;
+  font-family: var(--vs-type-family-mono);
+  font-size: 10px;
   font-weight: var(--vs-type-weight-regular);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .sidebar__close,
 .mobile-bar,
@@ -62,9 +67,10 @@
 .nav-group__label {
   padding: 0 var(--vs-space-12) var(--vs-space-8);
   color: var(--vs-color-text-muted);
-  font-size: 11px;
-  font-weight: var(--vs-type-weight-medium);
-  letter-spacing: 0.08em;
+  font-family: var(--vs-type-family-mono);
+  font-size: 10px;
+  font-weight: var(--vs-type-weight-regular);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 .nav-list {
@@ -75,6 +81,7 @@
   list-style: none;
 }
 .nav-link {
+  position: relative;
   display: flex;
   min-width: 0;
   min-height: var(--vs-navigation-item-height);
@@ -97,9 +104,24 @@
 }
 .nav-link--current,
 .nav-link--current:hover {
-  color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 10%, transparent);
-  border-color: color-mix(in srgb, var(--vs-color-accent-default) 14%, transparent);
+  color: var(--vs-color-text-primary);
+  background: var(--vs-color-bg-subtle);
+  border-color: var(--vs-color-border-subtle);
+}
+/* The active page is marked by a small lit orange square. */
+.nav-link--current::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: var(--vs-space-12);
+  width: 6px;
+  height: 6px;
+  background: var(--vs-color-accent-default);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--vs-color-accent-default) 70%, transparent);
+  translate: 0 -50%;
+}
+.app-shell--collapsed .nav-link--current::after {
+  right: var(--vs-space-4);
 }
 .sidebar__footer {
   padding: var(--vs-space-12);
@@ -116,7 +138,7 @@
   border-radius: var(--vs-radius-control);
   color: var(--vs-color-text-muted);
   text-align: left;
-  background: var(--vs-color-bg-canvas);
+  background: var(--vs-input-bg, var(--vs-color-bg-canvas));
 }
 .host-health:hover {
   border-color: var(--vs-color-border-strong);
@@ -147,8 +169,11 @@
 }
 .host-health small {
   color: var(--vs-color-text-muted);
-  font-size: 11px;
+  font-family: var(--vs-type-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
   line-height: 18px;
+  text-transform: uppercase;
 }
 .host-health__refresh {
   margin-left: auto;
@@ -160,14 +185,17 @@
   gap: var(--vs-space-8);
   padding: var(--vs-space-12) var(--vs-space-8);
   color: var(--vs-color-text-muted);
-  font-size: 12px;
+  font-family: var(--vs-type-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .theme-picker__options {
   display: flex;
   padding: var(--vs-space-2);
   border: 1px solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-control);
-  background: var(--vs-color-bg-canvas);
+  background: var(--vs-input-bg, var(--vs-color-bg-canvas));
 }
 .theme-picker__options .icon-button[aria-pressed='true'] {
   background: var(--vs-color-bg-raised);
@@ -250,7 +278,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--vs-space-16);
-  background: var(--vs-color-bg-canvas);
+  background: transparent;
 }
 .boot-screen strong,
 .boot-screen span {
@@ -281,7 +309,8 @@
     gap: var(--vs-space-8);
     padding: var(--vs-space-8);
     border-bottom: 1px solid var(--vs-color-border-subtle);
-    background: var(--vs-color-bg-surface);
+    background: var(--vs-color-bg-raised);
+    backdrop-filter: var(--vs-glass-blur, blur(24px));
   }
   .mobile-brand {
     gap: var(--vs-space-8);
@@ -344,4 +373,8 @@
   .theme-picker__options .icon-button[aria-pressed='true'] {
     border-color: Highlight;
   }
+}
+/* The logo artwork is white; render it as ink on the paper theme. */
+[data-theme='light'] :is(.brand, .mobile-brand, .boot-screen) img {
+  filter: brightness(0.12);
 }

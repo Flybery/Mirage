@@ -783,7 +783,7 @@ onBeforeUnmount(() => {
 .workspace-link:hover strong,
 .workspace-link:hover > svg,
 .workspace-link:hover .workspace-link__icon {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 .overview-page :deep(.linux-capture) {
   margin-bottom: 0;
@@ -815,7 +815,7 @@ onBeforeUnmount(() => {
   text-decoration: none;
 }
 .overview-footer a:hover {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 @media (max-width: 1199px) {
   .overview-detail-grid {

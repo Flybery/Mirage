@@ -903,8 +903,8 @@ function applyDisplaySelection(selection: ClientDisplaySelection): void {
 }
 
 .client-choice-card:has(input:checked) {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 8%, transparent);
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 8%, transparent);
 }
 
 .client-settings-control-stack {

@@ -1043,7 +1043,7 @@ onBeforeUnmount(() => {
 }
 
 .history-card:hover {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
   transform: translateY(-1px);
 }
 
@@ -1082,7 +1082,7 @@ onBeforeUnmount(() => {
 
 .history-card__action {
   margin-top: var(--vs-space-8);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-weight: var(--vs-type-weight-semibold);
 }
 

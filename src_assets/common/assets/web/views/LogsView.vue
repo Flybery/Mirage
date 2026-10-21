@@ -944,12 +944,12 @@ onBeforeUnmount(() => {
 }
 
 .log-search-result:focus-visible {
-  outline: 2px solid var(--vs-color-accent-default);
+  outline: 2px solid var(--vs-color-selected);
   outline-offset: 2px;
 }
 
 .log-search-result--active {
-  box-shadow: inset 3px 0 0 var(--vs-color-accent-default);
+  box-shadow: inset 3px 0 0 var(--vs-color-selected);
 }
 
 .log-search-result header {
@@ -963,7 +963,7 @@ onBeforeUnmount(() => {
 }
 
 .log-search-result .log-line[data-match-line='true'] {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 10%, transparent);
+  background: color-mix(in srgb, var(--vs-color-selected) 10%, transparent);
 }
 
 .log-match {
@@ -1005,8 +1005,8 @@ onBeforeUnmount(() => {
 
 .log-line--highlighted,
 .log-line--highlighted[data-severity] {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 20%, transparent);
-  box-shadow: inset 0 0 0 2px var(--vs-color-accent-default);
+  background: color-mix(in srgb, var(--vs-color-selected) 20%, transparent);
+  box-shadow: inset 0 0 0 2px var(--vs-color-selected);
 }
 
 .log-line__number {

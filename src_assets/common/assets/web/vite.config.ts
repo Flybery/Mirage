@@ -5,6 +5,8 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
 
 const configuredOutputDirectory = process.env.SUNSHINE_WEB_OUTPUT_DIR;
+// Point the dev server at another host, e.g. https://<host>:47990.
+const apiTarget = process.env.VIBEPOLLO_DEV_API_TARGET || 'https://127.0.0.1:47990';
 
 export default defineConfig({
   plugins: [vue()],
@@ -27,12 +29,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://127.0.0.1:47990',
+        target: apiTarget,
         changeOrigin: true,
         secure: false,
       },
       '/covers': {
-        target: 'https://127.0.0.1:47990',
+        target: apiTarget,
         changeOrigin: true,
         secure: false,
       },

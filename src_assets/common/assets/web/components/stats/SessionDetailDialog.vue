@@ -549,7 +549,7 @@ onBeforeUnmount(() => {
   width: 0.7rem;
   height: 0.7rem;
   margin-top: 0.3rem;
-  border: 2px solid var(--vs-color-accent-default);
+  border: 2px solid var(--vs-color-selected);
   border-radius: 50%;
   background: var(--vs-color-bg-canvas);
   z-index: 1;

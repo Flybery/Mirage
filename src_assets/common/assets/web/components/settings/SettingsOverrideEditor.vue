@@ -706,12 +706,12 @@ async function focusOverride(key: string): Promise<void> {
 }
 
 .settings-overrides__catalog-item:focus-visible {
-  outline: 2px solid var(--vs-color-accent-default);
+  outline: 2px solid var(--vs-color-selected);
   outline-offset: -2px;
 }
 
 .settings-overrides__catalog-item--active {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 7%, transparent);
+  background: color-mix(in srgb, var(--vs-color-selected) 7%, transparent);
 }
 
 .settings-overrides__catalog-copy {
@@ -733,7 +733,7 @@ async function focusOverride(key: string): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--vs-space-4);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-size: var(--vs-type-size-metadata);
   font-weight: var(--vs-type-weight-semibold);
   white-space: nowrap;

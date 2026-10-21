@@ -4836,8 +4836,8 @@ onBeforeUnmount(() => {
 }
 
 .app-display-routing__choice--active {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 8%, var(--vs-color-bg-raised));
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 8%, var(--vs-color-bg-raised));
 }
 
 .app-display-control-stack {
@@ -5079,9 +5079,9 @@ onBeforeUnmount(() => {
   min-inline-size: 0;
   padding: var(--vs-space-16);
   border: var(--vs-border-width) solid
-    color-mix(in srgb, var(--vs-color-accent-default) 30%, var(--vs-color-border-subtle));
+    color-mix(in srgb, var(--vs-color-selected) 30%, var(--vs-color-border-subtle));
   border-radius: var(--vs-radius-control);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 5%, var(--vs-color-bg-subtle));
+  background: color-mix(in srgb, var(--vs-color-selected) 5%, var(--vs-color-bg-subtle));
 }
 
 .lossless-editor__heading,
@@ -5161,8 +5161,8 @@ onBeforeUnmount(() => {
 }
 
 .lossless-profile-option--active {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 8%, var(--vs-color-bg-raised));
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 8%, var(--vs-color-bg-raised));
 }
 
 .lossless-profile-option span {
@@ -5187,8 +5187,8 @@ onBeforeUnmount(() => {
 }
 
 .lossless-resolution-control__mode--active {
-  border-color: var(--vs-color-accent-default);
-  color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
+  color: var(--vs-color-selected);
 }
 
 .framegen-health__heading {
@@ -5300,9 +5300,9 @@ onBeforeUnmount(() => {
 }
 
 .rtx-hdr__mode--active {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 8%, var(--vs-color-bg-raised));
-  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 8%, var(--vs-color-bg-raised));
+  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-selected);
 }
 
 .rtx-hdr__mode input {
@@ -5328,8 +5328,8 @@ onBeforeUnmount(() => {
 }
 
 .rtx-hdr__mode--active .rtx-hdr__mode-icon {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 16%, transparent);
-  color: var(--vs-color-accent-default);
+  background: color-mix(in srgb, var(--vs-color-selected) 16%, transparent);
+  color: var(--vs-color-selected);
 }
 
 .rtx-hdr__mode-copy {
@@ -5410,7 +5410,7 @@ onBeforeUnmount(() => {
 }
 
 .rtx-hdr__dial-heading output {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-size: var(--vs-type-size-control);
   font-variant-numeric: tabular-nums;
   font-weight: var(--vs-type-weight-semibold);
@@ -5460,7 +5460,7 @@ onBeforeUnmount(() => {
 .rtx-hdr__live-note > svg {
   flex: 0 0 auto;
   margin-block-start: 0.1rem;
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 
 .prep-list {
@@ -5550,7 +5550,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: var(--vs-color-accent-default);
+  background: var(--vs-color-selected);
   color: var(--vs-color-text-on-accent);
   font-size: var(--vs-type-size-metadata);
   font-weight: var(--vs-type-weight-semibold);
@@ -5635,12 +5635,12 @@ onBeforeUnmount(() => {
 }
 
 .application-overrides__catalog-item:focus-visible {
-  outline: 2px solid var(--vs-color-accent-default);
+  outline: 2px solid var(--vs-color-selected);
   outline-offset: -2px;
 }
 
 .application-overrides__catalog-item--active {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 7%, transparent);
+  background: color-mix(in srgb, var(--vs-color-selected) 7%, transparent);
 }
 
 .application-overrides__catalog-copy {
@@ -5670,7 +5670,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--vs-space-4);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-size: var(--vs-type-size-metadata);
   font-weight: var(--vs-type-weight-semibold);
   white-space: nowrap;
@@ -5759,8 +5759,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   margin-block-end: var(--vs-space-4);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--vs-color-accent-default) 12%, transparent);
-  color: var(--vs-color-accent-default);
+  background: color-mix(in srgb, var(--vs-color-selected) 12%, transparent);
+  color: var(--vs-color-selected);
 }
 
 .application-overrides__empty strong {

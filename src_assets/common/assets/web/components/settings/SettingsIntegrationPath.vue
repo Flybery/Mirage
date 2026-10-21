@@ -833,7 +833,7 @@ onBeforeUnmount(() => {
 
 .integration-path__entry-icon {
   flex: 0 0 auto;
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 
 .integration-path__entry-copy {

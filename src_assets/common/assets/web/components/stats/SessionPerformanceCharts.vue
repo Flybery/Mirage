@@ -447,12 +447,12 @@ onBeforeUnmount(() => {
 }
 .chart-range-button:hover,
 .chart-range-button:focus-visible {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
   color: var(--vs-color-text-primary);
 }
 .chart-range-button--selected {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 16%, transparent);
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 16%, transparent);
   color: var(--vs-color-text-primary);
 }
 .chart-history-fallback {

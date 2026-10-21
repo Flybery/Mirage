@@ -1663,8 +1663,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
   background: var(--vs-color-bg-subtle);
 }
 .settings-nav button.settings-nav__item--active {
-  color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 10%, transparent);
+  color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 10%, transparent);
   font-weight: var(--vs-type-weight-medium);
 }
 
@@ -1680,7 +1680,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
 .settings-category-heading > span,
 .settings-section__heading > span {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;

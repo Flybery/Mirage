@@ -854,7 +854,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--vs-space-8);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-size: var(--vs-type-size-metadata);
   font-weight: var(--vs-type-weight-semibold);
   letter-spacing: 0.04em;
@@ -905,8 +905,8 @@ onBeforeUnmount(() => {
   flex: none;
   place-items: center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--vs-color-accent-default) 18%, transparent);
-  color: var(--vs-color-accent-default);
+  background: color-mix(in srgb, var(--vs-color-selected) 18%, transparent);
+  color: var(--vs-color-selected);
   font-size: var(--vs-type-size-metadata);
   font-weight: var(--vs-type-weight-semibold);
 }
@@ -973,8 +973,8 @@ onBeforeUnmount(() => {
 }
 
 .api-token-method:has(input:checked) {
-  border-color: var(--vs-color-accent-default);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 14%, var(--vs-color-bg-surface));
+  border-color: var(--vs-color-selected);
+  background: color-mix(in srgb, var(--vs-color-selected) 14%, var(--vs-color-bg-surface));
 }
 
 .api-token-method__code,
@@ -1068,10 +1068,10 @@ onBeforeUnmount(() => {
   align-items: center;
   padding-inline: var(--vs-space-8);
   border: var(--vs-border-width) solid
-    color-mix(in srgb, var(--vs-color-accent-default) 50%, transparent);
+    color-mix(in srgb, var(--vs-color-selected) 50%, transparent);
   border-radius: var(--vs-radius-pill);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 12%, transparent);
-  color: var(--vs-color-accent-default);
+  background: color-mix(in srgb, var(--vs-color-selected) 12%, transparent);
+  color: var(--vs-color-selected);
 }
 
 .api-token-summary__action {

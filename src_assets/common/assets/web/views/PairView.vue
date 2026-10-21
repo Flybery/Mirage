@@ -263,7 +263,7 @@ function resetForm(): void {
   place-items: center;
   border: 1px solid var(--vs-color-border-strong);
   border-radius: var(--vs-radius-control);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
   font-weight: var(--vs-type-weight-semibold);
   font-variant-numeric: tabular-nums;
 }
@@ -303,7 +303,7 @@ function resetForm(): void {
   place-items: center;
   border-radius: var(--vs-radius-control);
   background: var(--vs-color-bg-subtle);
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-selected);
 }
 
 .pair-pin {

@@ -1109,11 +1109,11 @@ function libraryRequest(
 .library-item__open:hover,
 .library-item__open:focus-visible,
 .library-item--selected .library-item__open {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
 }
 
 .library-item--selected .library-item__open {
-  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-accent-default);
+  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-selected);
 }
 
 .library-item__artwork {
@@ -1138,12 +1138,12 @@ function libraryRequest(
   gap: var(--vs-space-8);
   padding: var(--vs-space-16);
   color: var(--vs-color-text-muted);
-  background: color-mix(in srgb, var(--vs-color-accent-default) 5%, var(--vs-color-bg-surface));
+  background: color-mix(in srgb, var(--vs-color-selected) 5%, var(--vs-color-bg-surface));
   font-size: var(--vs-type-size-helper);
   text-align: center;
 }
 .library-item__monogram {
-  color: color-mix(in srgb, var(--vs-color-accent-default) 70%, var(--vs-color-text-muted));
+  color: color-mix(in srgb, var(--vs-color-selected) 70%, var(--vs-color-text-muted));
   font-size: 56px;
   line-height: 1.2;
   font-weight: var(--vs-type-weight-medium);

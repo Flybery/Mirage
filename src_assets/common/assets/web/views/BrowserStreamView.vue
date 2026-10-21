@@ -2375,7 +2375,7 @@ onBeforeUnmount(() => {
 .app-picker__card:hover:not(:disabled),
 .app-picker__card:focus-visible,
 .app-picker__card--selected {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
 }
 
 .app-picker__card:hover:not(:disabled) {
@@ -2383,7 +2383,7 @@ onBeforeUnmount(() => {
 }
 
 .app-picker__card--selected {
-  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-accent-default);
+  box-shadow: inset 0 0 0 var(--vs-border-width) var(--vs-color-selected);
 }
 
 .app-picker__card:disabled {
@@ -2416,7 +2416,7 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(
       circle at 50% 30%,
-      color-mix(in srgb, var(--vs-color-accent-default) 24%, transparent),
+      color-mix(in srgb, var(--vs-color-selected) 24%, transparent),
       transparent 55%
     ),
     var(--vs-color-bg-subtle);
@@ -2499,7 +2499,7 @@ onBeforeUnmount(() => {
 }
 
 .stream-surface:focus-visible {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vs-color-accent-default) 44%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vs-color-selected) 44%, transparent);
 }
 
 .stream-surface--interactive {
@@ -2816,12 +2816,12 @@ onBeforeUnmount(() => {
 .stream-pacing__preset:hover,
 .stream-pacing__preset:focus-visible,
 .stream-pacing__preset--selected {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-selected);
   color: var(--vs-color-text-primary);
 }
 
 .stream-pacing__preset--selected {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 14%, transparent);
+  background: color-mix(in srgb, var(--vs-color-selected) 14%, transparent);
 }
 
 .stream-pacing__values {

@@ -5,6 +5,36 @@
   box-sizing: border-box;
 }
 
+/* Material: a blurred gradient backdrop behind frosted-glass layers. */
+:root,
+[data-theme='dark'] {
+  --vs-backdrop-image:
+    radial-gradient(48rem 32rem at 8% -6%, rgb(255 106 31 / 0.07), transparent 70%),
+    radial-gradient(56rem 40rem at 92% 12%, rgb(132 138 152 / 0.16), transparent 70%),
+    radial-gradient(64rem 44rem at 64% 108%, rgb(92 80 70 / 0.3), transparent 70%),
+    linear-gradient(180deg, #121214 0%, #0b0b0c 72%);
+  --vs-glass-blur: blur(24px) saturate(140%);
+  --vs-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+[data-theme='light'] {
+  --vs-backdrop-image:
+    radial-gradient(48rem 32rem at 8% -6%, rgb(255 106 31 / 0.06), transparent 70%),
+    radial-gradient(56rem 40rem at 92% 12%, rgb(255 255 255 / 0.9), transparent 70%),
+    radial-gradient(64rem 44rem at 64% 108%, rgb(196 190 180 / 0.45), transparent 70%),
+    linear-gradient(180deg, #f3f2ef 0%, #eeedea 72%);
+  --vs-glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+
+/* Small mono uppercase labels, as on instrument panels. */
+.vs-label-mono {
+  font-family: var(--vs-type-family-mono);
+  font-size: 11px;
+  font-weight: var(--vs-type-weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 html {
   min-block-size: 100%;
   color-scheme: dark;
@@ -22,7 +52,8 @@ html[data-theme='light'] {
 body {
   min-block-size: 100vh;
   margin: 0;
-  background: var(--vs-color-bg-canvas);
+  background: var(--vs-backdrop-image), var(--vs-color-bg-canvas);
+  background-attachment: fixed;
   color: var(--vs-color-text-primary);
   font-family: var(
     --vs-type-family-ui,
@@ -44,7 +75,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--vs-color-accent-default) 32%, transparent);
+  background: color-mix(in srgb, var(--vs-color-text-primary) 22%, transparent);
   color: var(--vs-color-text-primary);
 }
 
@@ -54,9 +85,9 @@ body {
 
 :where(h1, h2, h3, h4, h5, h6) {
   color: var(--vs-color-text-primary);
-  font-weight: var(--vs-type-weight-semibold, 600);
+  font-weight: var(--vs-type-weight-bold, 700);
   text-wrap: balance;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 :where(ul, ol) {
@@ -84,13 +115,15 @@ body {
 }
 
 a {
-  color: var(--vs-color-accent-default);
+  color: var(--vs-color-text-primary);
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.16em;
+  text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--vs-color-accent-hover);
+  color: var(--vs-color-accent-default);
+  text-decoration-color: currentColor;
 }
 
 img,
@@ -196,6 +229,7 @@ hr {
   border: var(--vs-border-width, 1px) solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-card);
   background: var(--vs-color-bg-surface);
+  box-shadow: var(--vs-glass-edge);
   color: var(--vs-color-text-primary);
 }
 
@@ -248,9 +282,9 @@ hr {
   min-inline-size: 0;
   min-block-size: var(--vs-field-height, var(--vs-size-control-md));
   padding-inline: var(--vs-space-12);
-  border: var(--vs-border-width, 1px) solid var(--vs-color-border-strong);
+  border: var(--vs-border-width, 1px) solid var(--vs-input-border, var(--vs-color-border-strong));
   border-radius: var(--vs-radius-control);
-  background: var(--vs-color-bg-canvas);
+  background: var(--vs-input-bg, var(--vs-color-bg-canvas));
   color: var(--vs-color-text-primary);
   font-size: var(--vs-type-size-control, 0.875rem);
   line-height: var(--vs-type-line-height-control, 1.4286);
@@ -263,7 +297,7 @@ hr {
 .vs-input:hover:not(:disabled),
 .vs-select:hover:not(:disabled),
 .vs-textarea:hover:not(:disabled) {
-  border-color: var(--vs-color-accent-default);
+  border-color: var(--vs-color-text-secondary);
 }
 
 .vs-select {
@@ -336,8 +370,8 @@ hr {
   block-size: 1.25rem;
   flex: none;
   border: var(--vs-border-width, 1px) solid var(--vs-color-border-strong);
-  border-radius: var(--vs-radius-pill);
-  background: var(--vs-color-bg-subtle);
+  border-radius: var(--vs-radius-subtle);
+  background: var(--vs-input-bg, var(--vs-color-bg-subtle));
   transition:
     background-color var(--vs-motion-duration-control) var(--vs-motion-easing-standard),
     border-color var(--vs-motion-duration-control) var(--vs-motion-easing-standard);
@@ -350,21 +384,23 @@ hr {
   inset-inline-start: 0.1875rem;
   inline-size: 0.75rem;
   block-size: 0.75rem;
-  border-radius: 50%;
-  background: var(--vs-color-text-secondary);
+  border-radius: 1px;
+  background: var(--vs-color-text-muted);
   translate: 0 -50%;
   transition:
     translate var(--vs-motion-duration-control) var(--vs-motion-easing-standard),
-    background-color var(--vs-motion-duration-control) var(--vs-motion-easing-standard);
+    background-color var(--vs-motion-duration-control) var(--vs-motion-easing-standard),
+    box-shadow var(--vs-motion-duration-control) var(--vs-motion-easing-standard);
 }
 
 .vs-switch > input:checked + .vs-switch__track {
-  border-color: var(--vs-color-accent-default);
-  background: var(--vs-color-accent-default);
+  border-color: var(--vs-color-text-secondary);
+  background: var(--vs-color-bg-subtle);
 }
 
 .vs-switch > input:checked + .vs-switch__track::after {
-  background: var(--vs-color-text-on-accent);
+  background: var(--vs-color-accent-default);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--vs-color-accent-default) 60%, transparent);
   translate: 1rem -50%;
 }
 
@@ -384,6 +420,7 @@ hr {
   border: var(--vs-border-width, 1px) solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-card);
   background: var(--vs-color-bg-surface);
+  box-shadow: var(--vs-glass-edge);
 }
 
 .vs-table {
@@ -410,9 +447,12 @@ hr {
 }
 
 .vs-table th {
-  color: var(--vs-color-text-secondary);
-  font-size: var(--vs-type-size-metadata, 0.8125rem);
-  font-weight: var(--vs-type-weight-semibold, 600);
+  color: var(--vs-color-text-muted);
+  font-family: var(--vs-type-family-mono);
+  font-size: 11px;
+  font-weight: var(--vs-type-weight-medium, 500);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -420,7 +460,8 @@ hr {
   position: sticky;
   inset-block-start: 0;
   z-index: 1;
-  background: var(--vs-color-bg-subtle);
+  background:
+    linear-gradient(var(--vs-color-bg-subtle), var(--vs-color-bg-subtle)), var(--vs-color-bg-canvas);
 }
 
 .vs-table tbody tr:last-child > * {

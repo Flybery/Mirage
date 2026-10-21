@@ -33,6 +33,7 @@
   border: 1px solid var(--vs-color-border-subtle);
   border-radius: var(--vs-radius-card);
   background: var(--vs-color-bg-surface);
+  box-shadow: var(--vs-glass-edge);
 }
 
 .panel__heading {
@@ -51,6 +52,7 @@
 .panel__heading h2 {
   font-size: 18px;
   line-height: 24px;
+  letter-spacing: -0.03em;
 }
 
 .panel__heading p {

@@ -443,8 +443,8 @@ onMounted(() => void loadGoldenStatus());
 
 .hotkey-recorder:focus-within .hotkey-keys,
 .hotkey-recorder:focus-within .hotkey-recorder__empty {
-  border-color: var(--vs-color-accent-default);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vs-color-accent-default) 28%, transparent);
+  border-color: var(--vs-color-selected);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vs-color-selected) 28%, transparent);
 }
 
 .hotkey-keys kbd {
