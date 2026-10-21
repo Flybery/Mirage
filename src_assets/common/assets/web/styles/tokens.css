@@ -15,13 +15,13 @@
   --vs-button-padding-x-min: 12px;
   --vs-button-primary-bg: #FF6A1F;
   --vs-button-primary-bg-hover: #FF8A4D;
-  --vs-button-primary-fg: #0B0B0C;
+  --vs-button-primary-fg: #14161C;
   --vs-button-radius: 3px;
   --vs-card-padding: 20px;
   --vs-color-accent-default: #FF6A1F;
   --vs-color-accent-hover: #FF8A4D;
-  --vs-color-bg-canvas: #0B0B0C;
-  --vs-color-bg-raised: rgb(30 30 33 / .88);
+  --vs-color-bg-canvas: #181A21;
+  --vs-color-bg-raised: rgb(36 38 50 / .86);
   --vs-color-bg-subtle: rgb(255 255 255 / .075);
   --vs-color-bg-surface: rgb(255 255 255 / .045);
   --vs-color-border-strong: #77756F;
@@ -35,7 +35,7 @@
   --vs-color-status-success: #71D5AB;
   --vs-color-status-warning: #EBC17B;
   --vs-color-text-muted: #9A978F;
-  --vs-color-text-on-accent: #0B0B0C;
+  --vs-color-text-on-accent: #14161C;
   --vs-color-text-primary: #EDEBE7;
   --vs-color-text-secondary: #B4B1AB;
   --vs-content-width-dashboard: 1440px;
