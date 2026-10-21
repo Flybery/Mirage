@@ -2235,6 +2235,14 @@ namespace config {
     bool_f(vars, "native_pen_touch", input.native_pen_touch);
     bool_f(vars, "enable_input_only_mode", input.enable_input_only_mode);
 
+#ifdef __linux__
+    // GNOME shows no AppIndicator tray without an extension, and each tray
+    // icon load there runs glycin's bwrap sandbox probe, which crashes with
+    // SIGSYS inside the host and files a coredump. An explicit value wins.
+    if (platf::linux_desktop::gnome_mode() && vars.find("system_tray") == vars.end()) {
+      sunshine.system_tray = false;
+    }
+#endif
     bool_f(vars, "system_tray", sunshine.system_tray);
     bool_f(vars, "hide_tray_controls", sunshine.hide_tray_controls);
     bool_f(vars, "enable_pairing", sunshine.enable_pairing);
