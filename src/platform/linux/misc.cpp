@@ -10,7 +10,9 @@
 
 // standard includes
 #include <algorithm>
+#include <atomic>
 #include <cstdlib>
+#include <format>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -491,6 +493,19 @@ namespace platf {
         return bp::child();
       }
       if (parts.size() > 1) args.assign(parts.begin() + 1, parts.end());
+      // The GNOME user host runs as a systemd user service. A child left in
+      // that service's cgroup (Steam, games) is killed whenever the host stops
+      // or restarts, and runs with the host's process context. Start it in its
+      // own user scope instead, as the KDE broker does; --scope keeps the PID,
+      // environment and process group, so stream lifecycle handling is unchanged.
+      if (linux_desktop::gnome_mode() && access("/usr/bin/systemd-run", X_OK) == 0) {
+        static std::atomic<unsigned> scope_counter {0};
+        const auto unit = std::format("--unit=app-vibepollo-{}-{}", getpid(), ++scope_counter);
+        std::vector<std::string> wrapped {"--user", "--scope", "--collect", "--quiet", unit, "--", exe_path.string()};
+        wrapped.insert(wrapped.end(), args.begin(), args.end());
+        args = std::move(wrapped);
+        exe_path = v2::filesystem::path("/usr/bin/systemd-run");
+      }
     }
 
     v2::process_stdio stdio {};
