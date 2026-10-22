@@ -13,7 +13,7 @@ export type UpdaterNetworkAudit = {
 
 function testOrigins(baseURL: string | undefined): Set<string> {
   const origins = new Set<string>();
-  for (const value of [baseURL, process.env.VIBEPOLLO_LEGACY_TEST_URL]) {
+  for (const value of [baseURL]) {
     if (value) origins.add(new URL(value).origin);
   }
   return origins;

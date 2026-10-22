@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { getConfigSelectOptions } from '../configs/configSelectOptions.ts';
-import { getConfigSelectOptions as getLegacyConfigSelectOptions } from '../../web-legacy/configs/configSelectOptions.ts';
 import {
   matchesPlatform,
   settingsFields,
@@ -28,13 +27,8 @@ import {
   serializeCommandRows,
 } from '../utils/v2Parity.ts';
 
-test('AMD speed default agrees across backend, settings UI and legacy fallbacks', () => {
-  for (const path of [
-    '../configs/settingsSchema.ts',
-    '../config.html',
-    '../../web-legacy/config.html',
-    '../../web-legacy/stores/config.ts',
-  ]) {
+test('AMD speed default agrees across backend and settings UI', () => {
+  for (const path of ['../configs/settingsSchema.ts', '../config.html']) {
     assert.match(readFileSync(new URL(path, import.meta.url), 'utf8'), /amd_quality:\s*'speed'/);
   }
   const backend = readFileSync(new URL('../../../../../src/config.cpp', import.meta.url), 'utf8');
@@ -99,15 +93,10 @@ test('gamepad options follow the host platform', () => {
       'vhf_switch',
     ],
   );
-  const legacyOptions = readFileSync(
-    new URL('../../web-legacy/configs/configSelectOptions.ts', import.meta.url),
-    'utf8',
-  );
-  assert.match(legacyOptions, /linux:\s*\['xone', 'ds4', 'ds5', 'switch'\]/);
 });
 
-test('both settings interfaces offer the composite DualSense on Windows and preserve saved values', () => {
-  for (const getOptions of [getConfigSelectOptions, getLegacyConfigSelectOptions]) {
+test('settings offer the composite DualSense on Windows and preserve saved values', () => {
+  for (const getOptions of [getConfigSelectOptions]) {
     const context = { t: (key: string) => key, platform: 'windows' };
     const option = getOptions('gamepad', context).find(
       (candidate) => candidate.value === 'usbip_ds5',
@@ -295,21 +284,11 @@ test('Linux virtual-display pacing uses Linux-specific copy', () => {
   }
 });
 
-test('Wayland HDR compatibility appears in both Linux settings UIs', () => {
+test('Wayland HDR compatibility is a Linux setting', () => {
   assert.equal(settingsFields.get('wayland_hdr_compatibility')?.platform, 'linux');
-  const legacyAudioVideo = readFileSync(
-    new URL('../../web-legacy/configs/tabs/AudioVideo.vue', import.meta.url),
-    'utf8',
-  );
-  const legacyStore = readFileSync(
-    new URL('../../web-legacy/stores/config.ts', import.meta.url),
-    'utf8',
-  );
-  assert.match(legacyAudioVideo, /v-model:checked="config\.wayland_hdr_compatibility"/);
-  assert.match(legacyStore, /wayland_hdr_compatibility:\s*false/);
 });
 
-test('Linux Proton and MangoHUD limiter choices stay aligned with legacy UI', () => {
+test('Linux Proton and MangoHUD limiter choices are offered', () => {
   assert.equal(settingsDefaults.frame_limiter_provider, 'auto');
   assert.equal(settingsDefaults.mangohud_limiter_method, 'late');
 
@@ -333,14 +312,6 @@ test('Linux Proton and MangoHUD limiter choices stay aligned with legacy UI', ()
   assert.match(messages.ui.integrations.mangohud.providerAuto, /Proton.*MangoHUD/i);
   assert.match(messages.ui.integrations.mangohud.limiterMethodDescription, /latency/i);
   assert.match(messages.ui.integrations.mangohud.limiterMethodDescription, /frame generation/i);
-
-  const legacyStep = readFileSync(
-    new URL('../../web-legacy/configs/tabs/audiovideo/FrameLimiterStep.vue', import.meta.url),
-    'utf8',
-  );
-  assert.match(legacyStep, /value: 'mangohud-proton'/);
-  assert.match(legacyStep, /value: 'proton'/);
-  assert.match(legacyStep, /setting-key="mangohud_limiter_method"/);
 });
 
 test('Linux maintenance omits Windows-only support and recovery sections', () => {

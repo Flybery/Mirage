@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { providerSupported } from '@/utils/providerCapabilities';
-import GameLibrarySetup from '../../web-legacy/components/GameLibrarySetup.vue';
+import GameLibrarySetup from '../components/GameLibrarySetup.vue';
 import { useUnsavedChanges } from '@/composables/useUnsavedChanges';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';

@@ -1112,113 +1112,6 @@ test('app behavior validates edited scaling and can return explicit options to d
   expect(saved?.['use-app-identity']).toBeUndefined();
 });
 
-for (const platform of ['windows', 'linux']) {
-  test(`classic game library setup and search work on ${platform}`, async ({ page }) => {
-    const legacyUrl = process.env.VIBEPOLLO_LEGACY_TEST_URL;
-    test.skip(!legacyUrl, 'Set VIBEPOLLO_LEGACY_TEST_URL to a served classic UI build.');
-    const patches = await host(page, platform, {}, true, { steam: true, lutris: platform === 'linux' });
-    await localRoute(page, '**/api/playnite/status', (route) =>
-      route.fulfill({ json: { installed: true, active: true } }),
-    );
-    await localRoute(page, '**/api/playnite/games', (route) =>
-      route.fulfill({ json: [{ id: 'pn-portal', name: 'Portal', installed: true }] }),
-    );
-    await localRoute(page, '**/api/steam/games*', (route) =>
-      route.fulfill({
-        json: {
-          games: [
-            {
-              appid: 400,
-              name: 'Portal',
-              installed: true,
-              artwork_client_path: 'C:/covers/steam_400.png',
-            },
-          ],
-        },
-      }),
-    );
-    await localRoute(page, '**/api/lutris/games', (route) =>
-      route.fulfill({ json: { games: [{ id: 9, name: 'Portal', directory: '/games/portal' }] } }),
-    );
-    const saved: Record<string, unknown>[] = [];
-    await localRoute(page, '**/api/apps', (route) => {
-      if (route.request().method() === 'POST') saved.push(route.request().postDataJSON());
-      return route.fulfill({
-        json:
-          route.request().method() === 'POST'
-            ? { status: true }
-            : {
-                apps: saved.map((app) => ({
-                  ...app,
-                  uuid: '53544541-4d00-5000-8000-000000000190',
-                })),
-              },
-      });
-    });
-    await localRoute(page, '**/api/apps/*/cover*', (route) =>
-      route.fulfill({
-        contentType: 'image/png',
-        body: Buffer.from(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==',
-          'base64',
-        ),
-      }),
-    );
-    await page.goto(legacyUrl + '/applications');
-    await page
-      .getByRole('button', { name: /Setup Game Library Integration|Library manager settings/ })
-      .first()
-      .click();
-    const setup = page.getByRole('dialog', {
-      name: /Setup Game Library Integration|Library manager settings/,
-    });
-    await expect(setup.getByRole('checkbox', { name: 'Steam', exact: true })).not.toBeChecked();
-    await setup.getByRole('checkbox', { name: 'Steam', exact: true }).check();
-    await setup.getByRole('button', { name: 'Next: Library settings' }).click();
-    await setup.getByRole('button', { name: 'Save settings', exact: true }).click();
-    await expect(setup.getByRole('status')).toHaveText('Game library settings saved.');
-    expect(patches.at(-1)).toMatchObject({
-      steam_auto_sync: true,
-      [platform === 'windows' ? 'playnite_auto_sync' : 'lutris_auto_sync']: true,
-    });
-    await setup.getByRole('button', { name: 'Done', exact: true }).click();
-    await page
-      .getByRole('button', { name: /Add Application/ })
-      .first()
-      .click();
-    const editor = page.locator('.n-card.n-modal');
-    const search = editor.locator('.n-select').first();
-    await search.click();
-    await page
-      .getByText(platform === 'windows' ? 'Portal — Playnite · Steam' : 'Portal — Steam · Lutris', {
-        exact: true,
-      })
-      .click();
-    await expect(editor.getByText('Launch with', { exact: true })).toBeVisible();
-    await editor.locator('.n-select').nth(1).click();
-    await page
-      .locator('.n-base-select-option')
-      .filter({ hasText: platform === 'windows' ? /^Steam$/ : /^Lutris$/ })
-      .click();
-    await editor.getByRole('button', { name: /Save/ }).click();
-    await expect.poll(() => saved.length).toBe(1);
-    expect(saved[0]).toMatchObject(
-      platform === 'windows'
-        ? {
-            'steam-id': '400',
-            cmd: 'cmd /c start "" steam://rungameid/400',
-            'image-path': 'C:/covers/steam_400.png',
-          }
-        : { 'lutris-id': '9', cmd: 'lutris lutris:rungameid/9' },
-    );
-    expect(saved[0]).not.toHaveProperty('playnite-id');
-    await expect(page.locator('.apps-row__badge')).toHaveText(
-      platform === 'windows' ? 'Steam' : 'Lutris',
-    );
-    await expect(page.locator('.apps-row__icon')).toHaveAttribute('src', /\/cover/);
-  });
-}
-
 test('initial library setup refreshes apps and persists editable settings', async ({ page }) => {
   await host(page, 'windows', {}, true, { steam: true });
   await localRoute(page, '**/api/playnite/status', route => route.fulfill({ json: { installed: false } }));
@@ -1479,78 +1372,6 @@ async function mockUpdaterFeed(
   return calls;
 }
 
-async function legacyUpdaterHost(
-  page: Page,
-  config: Record<string, unknown> = {},
-  metadata: Record<string, unknown> = {},
-  platform = 'windows',
-) {
-  const patches = await host(page, platform, config, true, undefined, metadata);
-  const saves: Record<string, unknown>[] = [];
-  const health = { vigem: 0, logs: 0 };
-  let persistedSnapshot = false;
-  await localRoute(page, '**/api/config', async (route) => {
-    const method = route.request().method();
-    if (method === 'GET' && persistedSnapshot) {
-      // Native config::parse_config returns scalar values as strings after persistence.
-      const stored = Object.fromEntries(Object.entries(config).map(([key, value]) => [
-        key, typeof value === 'boolean' || typeof value === 'number' ? String(value) : value,
-      ]));
-      return route.fulfill({ json: { status: true, capture: 'kms', virtual_display_mode: 'per_client', ...stored } });
-    }
-    if (method !== 'PATCH' && method !== 'POST') return route.fallback();
-    const body = route.request().postDataJSON() as Record<string, unknown>;
-    if (method === 'PATCH') patches.push(body);
-    else {
-      saves.push(body);
-      persistedSnapshot = true;
-      // POST rewrites native configuration. A dropped opt-out must not survive by accidental merging.
-      for (const key of Object.keys(config)) delete config[key];
-    }
-    for (const [key, value] of Object.entries(body)) {
-      if (value === null || value === '') delete config[key];
-      else config[key] = value;
-    }
-    await route.fulfill({ json: { status: true, appliedNow: true, deferred: false, restartRequired: false } });
-  });
-  await localRoute(page, '**/api/auth/sessions', (route) => route.fulfill({ json: { status: true, sessions: [] } }));
-  await localRoute(page, '**/api/health/vigem', (route) => {
-    health.vigem++;
-    return route.fulfill({ json: { installed: true, required: true, version: 'fixture' } });
-  });
-  await localRoute(page, '**/api/health/vulkan-hdr-layer', (route) => route.fulfill({ json: { installed: true, enabled: false } }));
-  await localRoute(page, '**/api/health/crashdump', (route) => route.fulfill({ json: { available: false } }));
-  await localRoute(page, '**/api/display/golden_status', (route) => route.fulfill({ json: {
-    exists: true, out_of_date: false, needs_layout_upgrade: false, restore_failure_count: 0,
-  } }));
-  await localRoute(page, '**/api/playnite/status', (route) => route.fulfill({ json: {
-    installed: true, active: false, update_available: false,
-    installed_version: 'fixture', packaged_version: 'fixture',
-  } }));
-  await localRoute(page, '**/api/frame-limiter/status', (route) => route.fulfill({ json: {
-    enabled: false, configured_provider: 'rtss', active_provider: '',
-    rtss_available: false, nvidia_available: false, mangohud_available: false,
-  } }));
-  await localRoute(page, '**/api/lossless_scaling/status', (route) => route.fulfill({ json: {} }));
-  await localRoute(page, '**/api/logs', (route) => {
-    health.logs++;
-    return route.fulfill({ contentType: 'text/plain', body: '' });
-  });
-  return { patches, saves, health };
-}
-
-function classicUpdaterUrl() {
-  const url = process.env.VIBEPOLLO_LEGACY_TEST_URL;
-  test.skip(!url, 'Set VIBEPOLLO_LEGACY_TEST_URL to a classic production build on the v2 test origin.');
-  const baseUrl = test.info().project.use.baseURL;
-  if (baseUrl) expect(new URL(url!).origin).toBe(new URL(baseUrl).origin);
-  return url!;
-}
-
-function legacyUpdaterCompleted(page: Page) {
-  return page.waitForResponse((response) => new URL(response.url()).pathname === '/api/logs');
-}
-
 async function stallUpdaterReleaseBody(page: Page) {
   await page.addInitScript(() => {
     const state = { started: 0, aborted: 0 };
@@ -1634,215 +1455,57 @@ test('Apollo updater interval zero still permits an explicit retry without resum
   expect(calls).toBe(2);
 });
 
-for (const preference of [false, 'false', 'disabled', 0, '0']) {
-  test(`legacy updater preserves explicit ${JSON.stringify(preference)} after PATCH and full save`, async ({ page }) => {
-    const legacyUrl = classicUpdaterUrl();
-    const config: Record<string, unknown> = { notify_pre_releases: preference, sunshine_name: 'Original host' };
-    const { patches, saves } = await legacyUpdaterHost(page, config, { version: '2.0.0-beta.1' });
-    const daily = updaterDaily('daily-2026-10-11');
-    const calls = await mockUpdaterFeed(page, [daily.release, updaterRelease('3.0.0-beta.1')], { [daily.metadata.tag]: daily.metadata });
-    const firstCheck = legacyUpdaterCompleted(page);
-    await page.goto(legacyUrl + '/');
-    await (await firstCheck).finished();
-    const check = page.getByRole('button', { name: 'Check for updates', exact: true });
-    await expect.poll(() => calls.releases).toBe(1);
-    await expect(check).toBeEnabled();
-    await expect(page.locator('.dashboard-release-alert')).toHaveCount(0);
-    expect(calls.metadata).toBe(0);
-    await page.locator('.dashboard-page a[href="/settings"]').click();
-    const name = page.locator('input#sunshine_name, #sunshine_name input');
-    await expect(name).toBeVisible();
-    await name.fill('Renamed host');
-    await name.blur();
-    await expect.poll(() => patches.some((patch) => patch.sunshine_name === 'Renamed host')).toBe(true);
-    expect(patches.every((patch) => !Object.hasOwn(patch, 'notify_pre_releases'))).toBe(true);
-    await page.locator('#global_prep_cmd').getByRole('button', { name: '+ Add', exact: true }).click();
-    await page.locator('textarea#global_prep_cmd_do_0, #global_prep_cmd_do_0 textarea').fill('fixture-only-command');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect.poll(() => saves.length).toBe(1);
-    expect(saves[0]['notify_pre_releases']).toBe(preference);
-    expect(saves[0]['sunshine_name']).toBe('Renamed host');
-    expect(config['notify_pre_releases']).toBe(preference);
-    const reloadedCheck = legacyUpdaterCompleted(page);
-    await page.goto(legacyUrl + '/');
-    await (await reloadedCheck).finished();
-    await expect.poll(() => calls.releases).toBe(2);
-    await expect(check).toBeEnabled();
-    await expect(page.locator('.dashboard-release-alert')).toHaveCount(0);
-    expect(calls.metadata).toBe(0);
-  });
-}
-
-test('legacy updater orders embedded daily versions and shares dismissal across reload and UI switch', async ({ page }) => {
-  const legacyUrl = classicUpdaterUrl();
-  await legacyUpdaterHost(page, {}, { version: '2.0.0-daily.d20261009+cccccccccccc' });
-  const older = updaterDaily('daily-2026-10-10', 'b');
-  const newer = updaterDaily('daily-2026-10-11');
-  const later = updaterDaily('daily-2026-10-12', 'd');
-  // The older release is deliberately first; the shared helper must use embedded lineage.
-  const releases = [older.release, newer.release];
-  const metadata = { [older.metadata.tag]: older.metadata, [newer.metadata.tag]: newer.metadata, [later.metadata.tag]: later.metadata };
-  await mockUpdaterFeed(page, releases, metadata);
-  await page.goto(legacyUrl + '/');
-  const notice = page.locator('.dashboard-release-alert');
-  await expect(notice).toHaveCount(1);
-  await expect(notice).toContainText(newer.metadata.version);
-  const downloadLink = notice.getByRole('link', { name: /\bDownload$/ });
-  await expect(downloadLink).toHaveCount(1);
-  await expect(downloadLink).toHaveAttribute('href', newer.release.html_url);
-  const releaseNotesButton = notice.getByRole('button', { name: /\bRelease Notes$/ });
-  await expect(releaseNotesButton).toHaveCount(1);
-  await releaseNotesButton.click();
-  await expect(notice).toContainText(newer.release.body);
-  await notice.getByRole('button', { name: 'Dismiss this update', exact: true }).click();
-  await expect(notice).toHaveCount(0);
-  const reloadedCheck = legacyUpdaterCompleted(page);
-  await page.reload();
-  await (await reloadedCheck).finished();
-  await expect(page.getByRole('button', { name: 'Check for updates', exact: true })).toBeEnabled();
-  await expect(notice).toHaveCount(0);
-  const switchedCheck = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.hostname === 'api.github.com' && url.pathname.endsWith('/releases') && url.searchParams.has('page');
-  });
-  await page.locator('.dashboard-page a[href="/v2/"]').click();
-  await (await switchedCheck).finished();
-  await expect(page.getByRole('heading', { name: 'Ready to stream' })).toBeVisible();
-  await settleUpdaterRendering(page);
-  await expect(page.locator('.update-notice')).toHaveCount(0);
-  releases.unshift(later.release);
-  await page.reload();
-  await expect(page.locator('.update-notice')).toContainText(`Vibepollo ${later.metadata.tag} is available`);
-  await expect(page.locator('.update-notice').getByRole('link', { name: 'Read release notes' })).toHaveAttribute('href', later.release.html_url);
-  await page.locator('.sidebar__legacy[href="/"]').click();
-  await expect(notice).toContainText(later.metadata.version);
-});
-
-test('legacy updater rejects malformed metadata and incomplete or wrong-platform assets', async ({ page }) => {
-  const legacyUrl = classicUpdaterUrl();
-  await legacyUpdaterHost(page, {}, { version: '1.9.0' });
-  const malformed = updaterDaily('daily-2026-10-11');
-  const incomplete = updaterDaily('daily-2026-10-12', 'b');
-  incomplete.release.assets = incomplete.release.assets.filter((asset) => asset.name !== 'SHA256SUMS');
-  const wrongPlatform = updaterDaily('daily-2026-10-13', 'c');
-  wrongPlatform.release.assets[0].name = 'Vibepollo-aarch64.AppImage';
-  const empty = updaterDaily('daily-2026-10-14', 'd');
-  empty.release.assets[0].size = 0;
-  const calls = await mockUpdaterFeed(page, [malformed.release, incomplete.release, wrongPlatform.release, empty.release], {
-    [malformed.metadata.tag]: { ...malformed.metadata, source_commit: 'b'.repeat(40) },
-  });
-  const completedCheck = legacyUpdaterCompleted(page);
-  await page.goto(legacyUrl + '/');
-  await (await completedCheck).finished();
-  await expect.poll(() => calls.releases).toBe(1);
-  expect(calls.metadata).toBe(0);
-  await expect(page.getByRole('button', { name: 'Check for updates', exact: true })).toBeEnabled();
-  await expect(page.locator('.dashboard-release-alert')).toHaveCount(0);
-});
-
-for (const [architecture, available] of [['x86_64', true], ['aarch64', false], ['unknown', false], [undefined, false]] as const) {
-  test(`legacy updater checks Linux package architecture ${String(architecture)}`, async ({ page }) => {
-    const legacyUrl = classicUpdaterUrl();
-    await legacyUpdaterHost(page, {}, { version: '1.9.0', architecture }, 'linux');
-    const daily = updaterDaily('daily-2026-10-11');
-    daily.release.assets[0].name = 'vibepollo-2.0.0-1-x86_64.pkg.tar.zst';
-    const calls = await mockUpdaterFeed(page, [daily.release], { [daily.metadata.tag]: daily.metadata });
-    const completedCheck = legacyUpdaterCompleted(page);
-    await page.goto(legacyUrl + '/');
-    await (await completedCheck).finished();
-    if (available) await expect(page.locator('.dashboard-release-alert')).toContainText(daily.metadata.version);
-    else await expect(page.locator('.dashboard-release-alert')).toHaveCount(0);
-    expect(calls).toEqual({ releases: 1, metadata: 0 });
-  });
-}
-
-test('legacy updater interval zero retains health and logs and permits one forced check', async ({ page }) => {
-  const legacyUrl = classicUpdaterUrl();
+test('updater aborts release API body on unmount without resuming its timer', async ({ page }) => {
   await page.clock.install();
-  const { health } = await legacyUpdaterHost(page, { update_check_interval: 0, controller: 'enabled' });
+  await stallUpdaterReleaseBody(page);
+  await host(page, 'windows');
+  let authenticated = true;
+  await localRoute(page, '**/api/auth/status', (route) => route.fulfill({ json: {
+    authenticated, login_required: !authenticated, credentials_configured: true,
+  } }));
+  await localRoute(page, '**/api/auth/logout', (route) => {
+    authenticated = false;
+    return route.fulfill({ json: { status: true } });
+  });
   const daily = updaterDaily('daily-2026-10-11');
-  const calls = await mockUpdaterFeed(page, [daily.release], { [daily.metadata.tag]: daily.metadata });
-  const completedCheck = legacyUpdaterCompleted(page);
-  await page.goto(legacyUrl + '/');
-  await (await completedCheck).finished();
-  await expect.poll(() => health.vigem > 0 && health.logs > 0).toBe(true);
-  expect(calls).toEqual({ releases: 0, metadata: 0 });
-  await page.getByRole('button', { name: 'Check for updates', exact: true }).click();
-  await expect(page.locator('.dashboard-release-alert')).toContainText(daily.metadata.version);
+  // A newer selectable stable release exposes swallowed cancellation after metadata enrichment.
+  const calls = await mockUpdaterFeed(page, [daily.release, updaterRelease('v3.0.0')], { [daily.metadata.tag]: daily.metadata });
+  await page.goto('/v2/');
+  await expect.poll(async () => (await updaterBodyState(page))?.started).toBe(1);
+  await page.locator('.sidebar__logout').click();
+  await expect(page.locator('.app-shell')).toHaveCount(0);
+  await expect.poll(async () => (await updaterBodyState(page))?.aborted).toBe(1);
+  await page.clock.fastForward(300001);
   expect(calls).toEqual({ releases: 1, metadata: 0 });
+  await expect(page.locator('.update-notice')).toHaveCount(0);
+});
+
+test('updater interval zero release-body timeout cannot select stable or resume checks', async ({ page }) => {
+  await page.clock.install();
+  await stallUpdaterReleaseBody(page);
+  const config = { update_check_interval: 1 };
+  await host(page, 'windows', config);
+  const daily = updaterDaily('daily-2026-10-11');
+  const calls = await mockUpdaterFeed(page, [daily.release, updaterRelease('v3.0.0')], { [daily.metadata.tag]: daily.metadata });
+  await page.route(`${updaterReleasesUrl}?**`, (route) => route.fulfill({ status: 403, json: { message: 'fixture unavailable' } }));
+  await page.goto('/v2/');
+  const check = page.getByRole('button', { name: 'Check for updates', exact: true });
+  await expect(check).toBeVisible();
+  await expect(check).toBeEnabled();
+  config.update_check_interval = 0;
+  await page.unroute(`${updaterReleasesUrl}?**`);
+  // Restore the controlled release route removed together with the one-off failure route.
+  await page.route(`${updaterReleasesUrl}?**`, (route) => {
+    calls.releases++;
+    return route.fulfill({ json: [daily.release, updaterRelease('v3.0.0')] });
+  });
+  await check.click();
+  await expect.poll(async () => (await updaterBodyState(page))?.started).toBe(1);
+  await page.clock.fastForward(15001);
+  await expect.poll(async () => (await updaterBodyState(page))?.aborted).toBe(1);
+  await expect(check).toBeEnabled();
+  await expect(page.getByText('Release information is unavailable. Try again later.', { exact: true })).toBeVisible();
+  await expect(page.locator('.update-notice a')).toHaveCount(0);
   await page.clock.fastForward(300001);
   expect(calls).toEqual({ releases: 1, metadata: 0 });
 });
-
-for (const ui of ['legacy', 'v2'] as const) {
-  test(`${ui} updater aborts release API body on unmount without resuming its timer`, async ({ page }) => {
-    const legacyUrl = ui === 'legacy' ? classicUpdaterUrl() : undefined;
-    await page.clock.install();
-    await stallUpdaterReleaseBody(page);
-    if (ui === 'legacy') await legacyUpdaterHost(page);
-    else await host(page, 'windows');
-    let authenticated = true;
-    await localRoute(page, '**/api/auth/status', (route) => route.fulfill({ json: {
-      authenticated, login_required: !authenticated, credentials_configured: true,
-    } }));
-    await localRoute(page, '**/api/auth/logout', (route) => {
-      authenticated = false;
-      return route.fulfill({ json: { status: true } });
-    });
-    const daily = updaterDaily('daily-2026-10-11');
-    // A newer selectable stable release exposes swallowed cancellation after metadata enrichment.
-    const calls = await mockUpdaterFeed(page, [daily.release, updaterRelease('v3.0.0')], { [daily.metadata.tag]: daily.metadata });
-    await page.goto(ui === 'legacy' ? legacyUrl + '/' : '/v2/');
-    await expect.poll(async () => (await updaterBodyState(page))?.started).toBe(1);
-    if (ui === 'legacy') {
-      await page.locator('.dashboard-page a[href="/settings"]').click();
-      await expect(page.locator('.dashboard-page')).toHaveCount(0);
-    } else {
-      await page.locator('.sidebar__logout').click();
-      await expect(page.locator('.app-shell')).toHaveCount(0);
-    }
-    await expect.poll(async () => (await updaterBodyState(page))?.aborted).toBe(1);
-    await page.clock.fastForward(300001);
-    expect(calls).toEqual({ releases: 1, metadata: 0 });
-    await expect(page.locator('.update-notice, .dashboard-release-alert')).toHaveCount(0);
-  });
-}
-
-for (const ui of ['legacy', 'v2'] as const) {
-  test(`${ui} updater interval zero release-body timeout cannot select stable or resume checks`, async ({ page }) => {
-    const legacyUrl = ui === 'legacy' ? classicUpdaterUrl() : undefined;
-    await page.clock.install();
-    await stallUpdaterReleaseBody(page);
-    const config = { update_check_interval: ui === 'legacy' ? 0 : 1 };
-    if (ui === 'legacy') await legacyUpdaterHost(page, config);
-    else await host(page, 'windows', config);
-    const daily = updaterDaily('daily-2026-10-11');
-    const calls = await mockUpdaterFeed(page, [daily.release, updaterRelease('v3.0.0')], { [daily.metadata.tag]: daily.metadata });
-    if (ui === 'v2') {
-      await page.route(`${updaterReleasesUrl}?**`, (route) => route.fulfill({ status: 403, json: { message: 'fixture unavailable' } }));
-    }
-    await page.goto(ui === 'legacy' ? legacyUrl + '/' : '/v2/');
-    const check = page.getByRole('button', { name: 'Check for updates', exact: true });
-    await expect(check).toBeVisible();
-    await expect(check).toBeEnabled();
-    config.update_check_interval = 0;
-    if (ui === 'v2') await page.unroute(`${updaterReleasesUrl}?**`);
-    // Restore the controlled release route removed together with the one-off failure route.
-    if (ui === 'v2') await page.route(`${updaterReleasesUrl}?**`, (route) => {
-      calls.releases++;
-      return route.fulfill({ json: [daily.release, updaterRelease('v3.0.0')] });
-    });
-    await check.click();
-    await expect.poll(async () => (await updaterBodyState(page))?.started).toBe(1);
-    await page.clock.fastForward(15001);
-    await expect.poll(async () => (await updaterBodyState(page))?.aborted).toBe(1);
-    await expect(check).toBeEnabled();
-    await expect(page.getByText(ui === 'legacy'
-      ? 'Update check unavailable. Try again.'
-      : 'Release information is unavailable. Try again later.', { exact: true })).toBeVisible();
-    await expect(page.locator('.update-notice a')).toHaveCount(0);
-    await expect(page.locator('.dashboard-release-alert')).toHaveCount(0);
-    await page.clock.fastForward(300001);
-    expect(calls).toEqual({ releases: 1, metadata: 0 });
-  });
-}

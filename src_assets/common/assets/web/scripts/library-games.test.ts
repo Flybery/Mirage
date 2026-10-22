@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { groupLibraryGames } from '../../web-legacy/utils/libraryGames.ts';
+import { groupLibraryGames } from '../utils/libraryGames.ts';
 
 test('groups matching titles and defaults to Playnite, Steam, then Lutris', () => {
   const games = groupLibraryGames([

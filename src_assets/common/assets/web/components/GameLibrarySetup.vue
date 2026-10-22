@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { providerSupported } from '../../web/utils/providerCapabilities';
+import { providerSupported } from '../utils/providerCapabilities';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 
 const props = defineProps<{

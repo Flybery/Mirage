@@ -890,6 +890,7 @@ sunshine_register_component(NAME test_component_log_sessions TEST_SOURCE unit/te
     PRODUCT_SOURCES "${SUNSHINE_TEST_REPOSITORY_ROOT}/src/logging.cpp" "${SUNSHINE_TEST_REPOSITORY_ROOT}/src/logging_policy.cpp"
     DEFINITIONS SUNSHINE_TESTS
     LINK_LIBRARIES Boost::log Boost::asio Boost::crc Boost::format ZLIB::ZLIB ${SUNSHINE_TEST_SOCKET_LIBRARIES})
+sunshine_register_component(NAME test_component_web_routes TEST_SOURCE unit/test_web_routes.cpp)
 sunshine_register_component(NAME test_component_thread_safe_shared TEST_SOURCE unit/test_thread_safe_shared.cpp
     LINK_LIBRARIES nlohmann_json::nlohmann_json)
 sunshine_register_component(NAME test_component_logging_policy TEST_SOURCE unit/test_logging.cpp

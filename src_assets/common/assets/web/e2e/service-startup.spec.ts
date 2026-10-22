@@ -73,7 +73,6 @@ async function host(page: Page, options: HostOptions = {}) {
 }
 
 for (const [interfaceName, path] of [
-  ['legacy', '/troubleshooting'],
   ['v2', '/v2/maintenance'],
 ]) {
   test(`${interfaceName} changes automatic startup to manual and back without restart`, async ({

@@ -132,24 +132,6 @@ test('every runtime override has an editor or belongs to the adapter pair', asyn
     assert.ok(key === 'adapter_pnp_id' || settingsFields.has(key), key);
 });
 
-test('legacy global configuration is covered by v2 fields or a dedicated integration destination', async () => {
-  const { readFileSync } = await import('node:fs');
-  const { settingsDestinations } = await import('../configs/settingsSchema.ts');
-  const source = readFileSync(
-    new URL('../../web-legacy/stores/config.ts', import.meta.url),
-    'utf8',
-  ).split('] as const satisfies')[0];
-  for (const match of source.matchAll(/^      (\w+):/gm)) {
-    const key = match[1];
-    assert.ok(
-      key === 'adapter_pnp_id' ||
-        settingsFields.has(key) ||
-        settingsDestinations.some((destination) => destination.keys.includes(key)),
-      key,
-    );
-  }
-});
-
 test('managed application focus settings are shared across platforms and separate from Playnite', async () => {
   const { settingsCategories, settingsDestinations } = await import('../configs/settingsSchema.ts');
   const focus = settingsCategories.flatMap((category) => category.groups).find((group) => group.id === 'app_focus');
