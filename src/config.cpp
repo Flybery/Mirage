@@ -1928,10 +1928,10 @@ namespace config {
     const auto linux_private_outputs = vars.find("virtual_display_outputs");
     const bool linux_private_outputs_specified =
       linux_private_outputs != vars.end() && !linux_private_outputs->second.empty();
-    // The GNOME user mode streams the existing desktop; the kernel pool is
-    // reserved for the KDE machine service even when it is provisioned.
+    // The GNOME user mode serves virtual displays through ScreenCast virtual
+    // monitors and does not need the kernel pool.
     if (!virtual_display_mode_specified && !linux_private_outputs_specified &&
-        (platf::linux_desktop::gnome_mode() || !platf::linux_private_display::kernel_pool_available())) {
+        !platf::linux_desktop::gnome_mode() && !platf::linux_private_display::kernel_pool_available()) {
       video.virtual_display_mode = video_t::virtual_display_mode_e::disabled;
     }
 #endif

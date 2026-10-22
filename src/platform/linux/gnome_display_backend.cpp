@@ -14,6 +14,7 @@
 #include "src/rtsp.h"
 
 #include <atomic>
+#include <cmath>
 #include <mutex>
 #include <set>
 
@@ -51,6 +52,11 @@ namespace platf::linux_display {
       return layout::arrangement_e::extend;
     }
 
+    // Clients may request their rate in millihertz; the monitor mode uses Hz.
+    int refresh_hz(int fps) {
+      return fps >= 1000 ? static_cast<int>(std::lround(fps / 1000.0)) : fps;
+    }
+
     void reset_virtual_display_state(rtsp_stream::launch_session_t &session) {
       session.virtual_display = false;
       session.virtual_display_failed = false;
@@ -81,8 +87,9 @@ namespace platf::linux_display {
 
         const bool shared = mode == config::video_t::virtual_display_mode_e::shared;
         const auto key = virtual_display_key(session, shared);
-        const auto target = gnome_virtual_display::target_name(key, session.width, session.height, session.fps);
-        gnome_virtual_display::register_client(key, session.width, session.height, session.fps);
+        const int hz = refresh_hz(session.fps);
+        const auto target = gnome_virtual_display::target_name(key, session.width, session.height, hz);
+        gnome_virtual_display::register_client(key, session.width, session.height, hz);
         {
           std::lock_guard lock {streaming_clients_mutex};
           streaming_clients.insert(key);
@@ -103,7 +110,7 @@ namespace platf::linux_display {
         }
 
         BOOST_LOG(info) << "GNOME desktop mode: streaming a virtual monitor at "
-                        << session.width << 'x' << session.height << '@' << session.fps << '.';
+                        << session.width << 'x' << session.height << '@' << hz << '.';
         session.virtual_display = true;
         session.virtual_display_device_id = target;
         session.virtual_display_hdr_enabled = false;
