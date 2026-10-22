@@ -20,6 +20,10 @@ namespace platf::gnome_display_config {
    * capture started. The configuration is applied as temporary, so Mutter
    * falls back to the stored layout of the remaining monitors as soon as the
    * capture ends and the virtual monitor disappears.
+   * Mutter stops drawing to physical monitors left out of the configuration
+   * but leaves their panels lit with the last frame, so the virtual-only
+   * arrangement also turns the backlights off until the virtual monitor is
+   * gone, whichever way the stream ends.
    * @param still_wanted Polled while waiting; false abandons the arrangement.
    */
   void arrange_new_virtual_monitor_async(
@@ -29,4 +33,7 @@ namespace platf::gnome_display_config {
     gnome_display_layout::arrangement_e arrangement,
     std::function<bool()> still_wanted
   );
+
+  /** @brief Restore backlights left off by a stream that ended with the process. */
+  void restore_pending_backlight();
 }  // namespace platf::gnome_display_config

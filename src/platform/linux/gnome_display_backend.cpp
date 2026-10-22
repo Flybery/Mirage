@@ -132,10 +132,17 @@ namespace platf::linux_display {
         return requested_output;
       }
 
+      bool initialize() const override {
+        gnome_display_config::restore_pending_backlight();
+        return true;
+      }
+
       bool revert() const override {
         // The capture owns the virtual monitor and Mutter restores the
         // remaining monitors' stored layout when it disappears.
         ++arrangement_generation;
+        // Also covers a service stop, which ends the backlight watcher early.
+        gnome_display_config::restore_pending_backlight();
         std::lock_guard lock {streaming_clients_mutex};
         for (const auto &key : streaming_clients) {
           gnome_virtual_display::remove_client(key);

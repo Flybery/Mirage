@@ -5,10 +5,15 @@
 #include "gnome_display_config.h"
 
 #include "src/logging.h"
+#include "src/platform/common.h"
 
+#include <algorithm>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <gio/gio.h>
 #include <thread>
+#include <utility>
 
 namespace platf::gnome_display_config {
   namespace layout = gnome_display_layout;
@@ -22,6 +27,8 @@ namespace platf::gnome_display_config {
     constexpr auto poll_interval = std::chrono::milliseconds(250);
     // The first virtual capture may wait for the portal permission dialog.
     constexpr auto appear_timeout = std::chrono::seconds(30);
+    constexpr auto vanish_poll_interval = std::chrono::seconds(1);
+    constexpr const char *sysfs_backlight_dir = "/sys/class/backlight";
 
     GDBusConnection *session_bus() {
       g_autoptr(GError) error = nullptr;
@@ -145,7 +152,226 @@ namespace platf::gnome_display_config {
       }
       return state;
     }
+
+    /* Backlights ---------------------------------------------------------- */
+
+    // Brightness to restore once the virtual-only stream ends: the sysfs
+    // devices written through logind and the values Mutter reports per
+    // connector, so its own brightness state matches the panel again.
+    struct saved_backlight_t {
+      std::vector<std::pair<std::string, int>> devices;
+      std::vector<std::pair<std::string, int>> connectors;
+    };
+
+    std::filesystem::path backlight_restore_file() {
+      return platf::appdata() / "gnome_backlight_restore";
+    }
+
+    std::vector<std::pair<std::string, int>> read_sysfs_backlights() {
+      std::vector<std::pair<std::string, int>> devices;
+      std::error_code error;
+      for (const auto &entry : std::filesystem::directory_iterator(sysfs_backlight_dir, error)) {
+        std::ifstream input {entry.path() / "brightness"};
+        int value = 0;
+        if (input >> value) {
+          devices.emplace_back(entry.path().filename().string(), value);
+        }
+      }
+      return devices;
+    }
+
+    std::optional<guint32> read_mutter_backlights(GDBusConnection *bus, std::vector<std::pair<std::string, int>> *connectors) {
+      g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        bus,
+        bus_name,
+        object_path,
+        "org.freedesktop.DBus.Properties",
+        "Get",
+        g_variant_new("(ss)", bus_name, "Backlight"),
+        G_VARIANT_TYPE("(v)"),
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        nullptr
+      );
+      if (!reply) {
+        return std::nullopt;
+      }
+      g_autoptr(GVariant) value = nullptr;
+      g_variant_get(reply, "(v)", &value);
+      if (!g_variant_is_of_type(value, G_VARIANT_TYPE("(uaa{sv})"))) {
+        return std::nullopt;
+      }
+      guint32 serial = 0;
+      g_autoptr(GVariantIter) entries = nullptr;
+      g_variant_get(value, "(uaa{sv})", &serial, &entries);
+      GVariant *entry = nullptr;
+      while (connectors && (entry = g_variant_iter_next_value(entries))) {
+        const gchar *connector = nullptr;
+        gint32 brightness = 0;
+        if (g_variant_lookup(entry, "connector", "&s", &connector) && g_variant_lookup(entry, "value", "i", &brightness)) {
+          connectors->emplace_back(connector, brightness);
+        }
+        g_variant_unref(entry);
+      }
+      return serial;
+    }
+
+    // Unprivileged brightness changes go through the active graphical
+    // session; the host service itself runs outside any logind session.
+    std::optional<std::string> active_graphical_session(GDBusConnection *system_bus) {
+      g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        system_bus,
+        "org.freedesktop.login1",
+        "/org/freedesktop/login1/seat/seat0",
+        "org.freedesktop.DBus.Properties",
+        "Get",
+        g_variant_new("(ss)", "org.freedesktop.login1.Seat", "ActiveSession"),
+        G_VARIANT_TYPE("(v)"),
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        nullptr
+      );
+      if (!reply) {
+        return std::nullopt;
+      }
+      g_autoptr(GVariant) value = nullptr;
+      g_variant_get(reply, "(v)", &value);
+      if (!g_variant_is_of_type(value, G_VARIANT_TYPE("(so)"))) {
+        return std::nullopt;
+      }
+      const gchar *path = nullptr;
+      g_variant_get(value, "(&s&o)", nullptr, &path);
+      return std::string {path};
+    }
+
+    bool set_device_brightness(GDBusConnection *system_bus, const std::string &session, const std::string &device, int value) {
+      g_autoptr(GError) error = nullptr;
+      g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        system_bus,
+        "org.freedesktop.login1",
+        session.c_str(),
+        "org.freedesktop.login1.Session",
+        "SetBrightness",
+        g_variant_new("(ssu)", "backlight", device.c_str(), static_cast<guint32>(std::max(value, 0))),
+        nullptr,
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        &error
+      );
+      if (!reply) {
+        BOOST_LOG(warning) << "GNOME display config: setting " << device << " brightness failed: " << (error ? error->message : "unknown error");
+      }
+      return reply != nullptr;
+    }
+
+    void write_restore_file(const saved_backlight_t &saved) {
+      std::ofstream output {backlight_restore_file(), std::ios::trunc};
+      for (const auto &[device, value] : saved.devices) {
+        output << "device " << device << ' ' << value << '\n';
+      }
+      for (const auto &[connector, value] : saved.connectors) {
+        output << "connector " << connector << ' ' << value << '\n';
+      }
+    }
+
+    std::optional<saved_backlight_t> read_restore_file() {
+      std::ifstream input {backlight_restore_file()};
+      if (!input) {
+        return std::nullopt;
+      }
+      saved_backlight_t saved;
+      std::string kind;
+      std::string name;
+      int value = 0;
+      while (input >> kind >> name >> value) {
+        (kind == "device" ? saved.devices : saved.connectors).emplace_back(name, value);
+      }
+      return saved;
+    }
+
+    std::optional<saved_backlight_t> turn_backlights_off(GDBusConnection *bus) {
+      g_autoptr(GDBusConnection) system_bus = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, nullptr);
+      const auto session = system_bus ? active_graphical_session(system_bus) : std::nullopt;
+      if (!session) {
+        return std::nullopt;
+      }
+      saved_backlight_t saved {.devices = read_sysfs_backlights()};
+      (void) read_mutter_backlights(bus, &saved.connectors);
+      if (saved.devices.empty()) {
+        return std::nullopt;
+      }
+      // Persist first so a crash mid-stream still restores at the next start.
+      write_restore_file(saved);
+      for (const auto &[device, value] : saved.devices) {
+        (void) set_device_brightness(system_bus, *session, device, 0);
+      }
+      BOOST_LOG(info) << "GNOME display config: turned the physical panel backlight off for the virtual-only stream.";
+      return saved;
+    }
+
+    void restore_backlights(const saved_backlight_t &saved) {
+      g_autoptr(GDBusConnection) system_bus = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, nullptr);
+      const auto session = system_bus ? active_graphical_session(system_bus) : std::nullopt;
+      bool restored = session.has_value();
+      for (const auto &[device, value] : saved.devices) {
+        restored = session && set_device_brightness(system_bus, *session, device, value) && restored;
+      }
+      // Mutter clamps the off state to its minimum; set its value back too.
+      if (g_autoptr(GDBusConnection) bus = session_bus()) {
+        if (const auto serial = read_mutter_backlights(bus, nullptr)) {
+          for (const auto &[connector, value] : saved.connectors) {
+            g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+              bus,
+              bus_name,
+              object_path,
+              bus_name,
+              "SetBacklight",
+              g_variant_new("(usi)", *serial, connector.c_str(), value),
+              nullptr,
+              G_DBUS_CALL_FLAGS_NONE,
+              -1,
+              nullptr,
+              nullptr
+            );
+          }
+        }
+      }
+      if (restored) {
+        std::error_code error;
+        std::filesystem::remove(backlight_restore_file(), error);
+        BOOST_LOG(info) << "GNOME display config: restored the physical panel backlight.";
+      }
+    }
+
+    // The capture owns the virtual monitor, so its disappearance is the one
+    // signal that covers every way a stream can end.
+    void restore_when_gone(GDBusConnection *bus, const std::string &connector, const saved_backlight_t &saved) {
+      int failed_reads = 0;
+      while (failed_reads < 10) {
+        std::this_thread::sleep_for(vanish_poll_interval);
+        const auto state = read_state(bus);
+        if (!state) {
+          ++failed_reads;
+          continue;
+        }
+        failed_reads = 0;
+        if (!state->monitor(connector)) {
+          break;
+        }
+      }
+      restore_backlights(saved);
+    }
   }  // namespace
+
+  void restore_pending_backlight() {
+    if (const auto saved = read_restore_file()) {
+      BOOST_LOG(info) << "GNOME display config: restoring a backlight left off by an earlier stream.";
+      restore_backlights(*saved);
+    }
+  }
 
   std::optional<layout::state_t> read_state() {
     g_autoptr(GDBusConnection) bus = session_bus();
@@ -172,6 +398,11 @@ namespace platf::gnome_display_config {
         if (planned) {
           if (apply(bus, *now, *planned)) {
             BOOST_LOG(info) << "GNOME display config: arranged virtual monitor " << *connector << '.';
+            if (arrangement == layout::arrangement_e::virtual_only) {
+              if (const auto saved = turn_backlights_off(bus)) {
+                restore_when_gone(bus, *connector, *saved);
+              }
+            }
             return;
           }
           // The serial goes stale when Mutter reconfigures concurrently; retry.
