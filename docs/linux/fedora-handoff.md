@@ -19,6 +19,20 @@ Working:
 - Steam / Big Picture launched through the stream run in their own user scope
   (`app-vibepollo-<pid>-<n>.scope`), not inside the host service.
 
+Added since (verified 2026-10-22 with a Windows Moonlight client):
+
+- Virtual display for normal streams ("Virtual screen per device", now the GNOME default): each
+  stream captures a ScreenCast virtual monitor at the client's mode (rates in millihertz are
+  converted to Hz). The layout is applied through `org.gnome.Mutter.DisplayConfig` as a temporary
+  config (`gnome_display_config.cpp`, planning in `gnome_display_layout.h`):
+  "Virtual display only" leaves only the virtual monitor enabled; the extend layouts restore the
+  previous monitors with their scale. Mutter leaves a disabled panel lit with a frozen frame, so
+  virtual-only also sets the backlight to 0 through the active logind session and restores it
+  when the virtual monitor disappears (saved in `~/.config/vibepollo/gnome_backlight_restore`
+  for crash recovery).
+- Web panel: Glass/Light/Dark/System appearances, Glass default; the classic UI is removed and
+  its paths redirect to `/v2/` (`src/web_routes.h`).
+
 ## How the laptop is driven
 
 - SSH over Tailscale from the Windows dev PC: `bo@100.69.189.33`, key `~/.ssh/vibepollo_fedora`.
@@ -44,8 +58,9 @@ tray disabled in GNOME mode, JPEG/WebP cover conversion deps.
 
 ## Open items
 
-- While a virtual monitor exists, GNOME treats the monitor set as new and may drop the laptop scale
-  from 125% to 100% (needs `org.gnome.Mutter.DisplayConfig` handling).
+- Remote Monitor still uses Mutter's default arrangement, which may drop the laptop scale from 125%
+  to 100% (normal streams restore it). The user wants the GNOME virtual screen option renamed.
+- Extend layouts and multiple simultaneous virtual-display clients are untested.
 - Remote Monitor position across reconnects depends on whether Mutter recognizes the virtual monitor.
 - CUDA/NVENC build on Fedora 44 (GCC 15 + CUDA 12.9 `-allow-unsupported-compiler`) is untested.
 - Flatpak Steam/Lutris games are listed but cannot launch (`/usr/bin/steam`, `/usr/bin/lutris`).
