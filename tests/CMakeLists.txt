@@ -871,6 +871,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     sunshine_register_component(NAME test_component_linux_desktop_mode TEST_SOURCE unit/platform/linux/test_desktop_mode.cpp)
     sunshine_register_component(NAME test_component_linux_gnome_virtual_display TEST_SOURCE unit/platform/linux/test_gnome_virtual_display.cpp
         PRODUCT_SOURCES "${SUNSHINE_TEST_REPOSITORY_ROOT}/src/platform/linux/gnome_virtual_display.cpp")
+    sunshine_register_component(NAME test_component_linux_gnome_display_layout TEST_SOURCE unit/platform/linux/test_gnome_display_layout.cpp)
     sunshine_register_component(NAME test_component_linux_private_display_capture_policy TEST_SOURCE unit/platform/linux/test_private_display_capture_policy.cpp)
     sunshine_register_component(NAME test_component_linux_private_display_restore_policy TEST_SOURCE unit/platform/linux/test_private_display_restore_policy.cpp
         LINK_LIBRARIES nlohmann_json::nlohmann_json)

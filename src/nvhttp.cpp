@@ -576,6 +576,11 @@ namespace nvhttp {
       if (!launch_session->virtual_display || mode == config::video_t::virtual_display_mode_e::shared || launch_session->role != remote_session::role_e::game) {
         return linux_normal_identity_result_e::not_needed;
       }
+      // GNOME virtual monitors belong to their capture stream; there is no
+      // KScreen topology to reserve or compose.
+      if (platf::linux_desktop::gnome_mode()) {
+        return linux_normal_identity_result_e::not_needed;
+      }
       if (launch_session->normal_vdd_identity_token != 0) {
         return linux_normal_identity_result_e::ready;
       }
