@@ -5,6 +5,7 @@ import { apiGet } from '@/api/client';
 import { AppButton, InlineAlert } from '@/components/ui';
 import { useSystemStore } from '@/stores/system';
 import type { ChangelogEntry } from '@/utils/changelog';
+import { releasesUrl } from '@/utils/releaseRepository';
 import {
   selectAvailableUpdate,
   fetchUpdateReleases,
@@ -91,9 +92,7 @@ function dismiss(): void {
     >
       <a
         :href="
-          available.url?.startsWith('https://github.com/Nonary/Vibepollo/releases/')
-            ? available.url
-            : 'https://github.com/Nonary/Vibepollo/releases'
+          available.url?.startsWith(`${releasesUrl}/`) ? available.url : releasesUrl
         "
         target="_blank"
         rel="noopener noreferrer"
