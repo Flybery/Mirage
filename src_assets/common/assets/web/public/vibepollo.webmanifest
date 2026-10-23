@@ -1,8 +1,8 @@
 {
   "id": "/v2/stream",
-  "name": "Vibepollo Browser Stream",
-  "short_name": "Vibepollo",
-  "description": "Low-latency remote streaming from Vibepollo",
+  "name": "Mirage Browser Stream",
+  "short_name": "Mirage",
+  "description": "Low-latency remote streaming from Mirage",
   "start_url": "/v2/stream",
   "scope": "/v2/",
   "display": "fullscreen",

@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
   // Staged packages must report their version before assets or a user profile
   // exist. Keep this query independent of configuration and host startup.
   if (argc == 2 && argv[1] == "--version"sv) {
-    std::printf("%s version: %s commit: %s\n", PROJECT_NAME, PROJECT_VERSION, PROJECT_VERSION_COMMIT);
+    std::printf("%s version: %s commit: %s\n", PROJECT_DISPLAY_NAME, PROJECT_VERSION, PROJECT_VERSION_COMMIT);
     return 0;
   }
 
@@ -391,14 +391,14 @@ int main(int argc, char *argv[]) {
   // logging can begin at this point
   // if anything is logged prior to this point, it will appear in stdout, but not in the log viewer in the UI
   // the version should be printed to the log before anything else
-  BOOST_LOG(info) << PROJECT_NAME << " version: " << PROJECT_VERSION << " commit: " << PROJECT_VERSION_COMMIT;
+  BOOST_LOG(info) << PROJECT_DISPLAY_NAME << " version: " << PROJECT_VERSION << " commit: " << PROJECT_VERSION_COMMIT;
 #ifdef _WIN32
   const auto windows_version = platf::query_windows_version();
   BOOST_LOG(info) << "Windows version: product=" << windows_version.product_name
                   << ", display_version=" << windows_version.display_version
                   << ", build=" << windows_version.current_build;
   if (windows_version.build_number.has_value() && *windows_version.build_number < 22000) {
-    BOOST_LOG(warning) << "Windows 10 detected; HDR will not work on the Mirage Display.";
+    BOOST_LOG(warning) << "Windows 10 detected; HDR will not work on the Mirage Virtual Display.";
   }
 #endif
   if (version_compare::is_prerelease_channel(PROJECT_VERSION)) {

@@ -136,11 +136,11 @@ namespace system_tray {
   // Tray menu
   static struct tray tray = {
     .icon = TRAY_ICON,
-    .tooltip = PROJECT_NAME,
+    .tooltip = PROJECT_DISPLAY_NAME,
     .menu =
       (struct tray_menu[]) {
         // todo - use boost/locale to translate menu strings
-        {.text = "Open Vibepollo", .cb = tray_open_ui_cb},
+        {.text = "Open " PROJECT_DISPLAY_NAME, .cb = tray_open_ui_cb},
         {.text = "-"},
         // { .text = "-" },
         // { .text = "Donate",
@@ -519,7 +519,7 @@ namespace system_tray {
       tray.notification_icon = TRAY_ICON;
       tray.notification_title = "Application Stopped";
       tray.notification_text = s_notification_text.c_str();
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray.menu[2].text = TRAY_MSG_NO_APP_RUNNING;
       s_last_playing_app.clear();
       tray_update(&tray);
@@ -550,7 +550,7 @@ namespace system_tray {
         BOOST_LOG(info) << "Force stop from notification"sv;
         proc::proc.terminate();
       };
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       s_last_playing_app.clear();
       tray_update(&tray);
     });
@@ -567,7 +567,7 @@ namespace system_tray {
       tray.notification_title = "Incoming Pairing Request";
       tray.notification_text = "Click here to complete the pairing process";
       tray.notification_icon = TRAY_ICON_LOCKED;
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray.notification_cb = []() {
         launch_ui("/clients");
       };
@@ -595,7 +595,7 @@ namespace system_tray {
       s_paired_text = msg;
       tray.notification_text = s_paired_text.c_str();
       tray.notification_icon = TRAY_ICON;
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray_update(&tray);
     });
   }
@@ -621,7 +621,7 @@ namespace system_tray {
       s_client_text = msg;
       tray.notification_text = s_client_text.c_str();
       tray.notification_icon = TRAY_ICON;
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray_update(&tray);
     });
   }
@@ -637,7 +637,7 @@ namespace system_tray {
       tray.notification_title = "Gamepad Input Unavailable";
       tray.notification_text = "ViGEm is not installed. Click for setup info";
       tray.notification_icon = TRAY_ICON;
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray.notification_cb = []() {
         launch_ui("/");
       };
@@ -794,7 +794,7 @@ namespace system_tray {
       tray.notification_title = s_notify_title.empty() ? nullptr : s_notify_title.c_str();
       tray.notification_text = s_notification_text.c_str();
       tray.notification_icon = TRAY_ICON;
-      tray.tooltip = PROJECT_NAME;
+      tray.tooltip = PROJECT_DISPLAY_NAME;
       tray.notification_cb = cb;
       tray_update(&tray);
     });

@@ -44,17 +44,17 @@
         "empty": "No matching covers were found. Try adjusting the application name.",
         "errorTitle": "Cover selection unavailable",
         "playniteTitle": "This changes Playnite metadata",
-        "playniteUpdateError": "Vibepollo downloaded the cover but could not replace this game's cover metadata in Playnite.",
+        "playniteUpdateError": "Mirage downloaded the cover but could not replace this game's cover metadata in Playnite.",
         "playniteWarning": "Choosing a cover here replaces this game's cover metadata in Playnite.",
         "pathDisclosure": "Advanced: cover image path",
         "providerHelp": "Choose replacement artwork without exposing provider-managed file paths.",
         "searchAction": "Search",
-        "searchError": "Vibepollo could not search for cover artwork.",
+        "searchError": "Mirage could not search for cover artwork.",
         "searchLabel": "Search for cover artwork",
         "searchPlaceholder": "Search for a game cover",
         "select": "Use the {name} cover",
         "title": "Choose cover artwork",
-        "uploadError": "Vibepollo could not download and prepare that cover."
+        "uploadError": "Mirage could not download and prepare that cover."
       },
       "delete": {
         "action": "Delete application",
@@ -96,7 +96,7 @@
           "placeholder": "One command per line"
         },
         "displayAction": {
-          "description": "Control how aggressively Vibepollo applies the requested layout.",
+          "description": "Control how aggressively Mirage applies the requested layout.",
           "label": "Display configuration action"
         },
         "displayLayout": {
@@ -305,7 +305,7 @@
       },
       "steam": {
         "browse": "Browse Steam games",
-        "editNotice": "Vibepollo manages this game's core launch details from Steam metadata. Optional preparation and detached commands remain available under Advanced launch controls.",
+        "editNotice": "Mirage manages this game's core launch details from Steam metadata. Optional preparation and detached commands remain available under Advanced launch controls.",
         "empty": "No installed Steam games match this name.",
         "loadFailed": "Unable to load Steam games. Check that Steam is installed and its libraries are readable.",
         "loading": "Loading Steam games...",
@@ -316,7 +316,7 @@
       },
       "lutris": {
         "browse": "Browse Lutris games",
-        "editNotice": "Vibepollo manages this game's launch command from Lutris metadata. Those generated details stay hidden here; automatic Lutris entries refresh them during sync.",
+        "editNotice": "Mirage manages this game's launch command from Lutris metadata. Those generated details stay hidden here; automatic Lutris entries refresh them during sync.",
         "empty": "No imported Lutris games match this name.",
         "loadFailed": "Unable to load Lutris games. Check that Lutris is installed and its library is readable.",
         "loading": "Loading Lutris games...",
@@ -356,7 +356,7 @@
           "title": "Virtual display and layout"
         },
         "execution": {
-          "description": "Paths are interpreted by the host running Vibepollo.",
+          "description": "Paths are interpreted by the host running Mirage.",
           "title": "Executable, output, and artwork"
         },
         "frameGeneration": {
@@ -392,7 +392,7 @@
     },
     "auth": {
       "credentials_required": "Enter a username and password.",
-      "login_description": "Sign in to manage this Vibepollo host.",
+      "login_description": "Sign in to manage this Mirage host.",
       "security_note": "This page is served directly by your host. Credentials do not leave this machine.",
       "setup_description": "Create the administrator account used to manage streaming and paired devices."
     },
@@ -438,7 +438,7 @@
         "display_override": "Use a client-specific display route",
         "hdr_description": "Apply HDR calibration and virtual-display presentation settings for this client.",
         "hdr_peak_description": "Set a manual peak brightness for this client's virtual display and HDR stream, or leave it automatic.",
-        "hdr_profile_description": "The Mirage display driver retains Windows HDR calibration profiles automatically. Select an override here only for physical displays or other virtual display drivers.",
+        "hdr_profile_description": "The Mirage virtual display driver retains Windows HDR calibration profiles automatically. Select an override here only for physical displays or other virtual display drivers.",
         "name_helper": "Use a name that identifies the person or screen using this client.",
         "no_displays": "No displays were reported by this host",
         "no_hdr_profiles": "No installed HDR color profiles",
@@ -537,7 +537,7 @@
       "checksFailed": "Some integration checks failed",
       "confirm": {
         "defaultTitle": "Confirm integration action",
-        "playniteInstallDescription": "Playnite will close and reopen to install or update the Vibepollo extension.",
+        "playniteInstallDescription": "Playnite will close and reopen to install or update the Mirage extension.",
         "playniteInstallTitle": "Install the Playnite extension?",
         "playniteRemoveDescription": "Playnite will close to remove the extension. Library synchronization will stop until the extension is installed again.",
         "playniteRemoveTitle": "Remove the Playnite extension?",
@@ -548,7 +548,7 @@
         "vigemDescription": "The bundled elevated installer will modify the virtual controller driver on this host.",
         "vigemInstallTitle": "Install ViGEmBus?",
         "vigemRepairTitle": "Repair ViGEmBus?",
-        "vulkanRegisterDescription": "Vibepollo will repair the system registration for its bundled implicit Vulkan layer.",
+        "vulkanRegisterDescription": "Mirage will repair the system registration for its bundled implicit Vulkan layer.",
         "vulkanRegisterTitle": "Register the Vulkan HDR layer?"
       },
       "description": "Optional host components and their current operational state.",
@@ -614,7 +614,7 @@
         "vulkanRefreshed": "The Vulkan HDR layer registration was refreshed."
       },
   "playnite": {
-        "description": "Synchronizes installed games and metadata through the Vibepollo extension.",
+        "description": "Synchronizes installed games and metadata through the Mirage extension.",
         "shortDescription": "Library synchronization and launch integration.",
         "policies_title": "Library and launch policies"
       },
@@ -642,7 +642,7 @@
         "presetHorizontal": "Horizontal",
         "provider": "Limiter provider",
         "providerAuto": "Automatic — Proton limiter + MangoHUD overlay",
-        "providerDescription": "Automatic uses Proton's built-in DXVK or vkd3d-proton limiter and keeps the MangoHUD overlay visible. On native Linux, games started through supported Proton installations while streaming are also covered when launched outside Vibepollo. Start the stream before the game; running games retain their launch-time limit. Proton supports frame-generated output. Choose MangoHUD for early or late limiter timing.",
+        "providerDescription": "Automatic uses Proton's built-in DXVK or vkd3d-proton limiter and keeps the MangoHUD overlay visible. On native Linux, games started through supported Proton installations while streaming are also covered when launched outside Mirage. Start the stream before the game; running games retain their launch-time limit. Proton supports frame-generated output. Choose MangoHUD for early or late limiter timing.",
         "providerMangoHud": "MangoHUD",
         "providerMangoHudProton": "MangoHUD + Proton",
         "providerProton": "Proton DXVK/VKD3D",
@@ -710,7 +710,7 @@
         "autoSyncDescription": "Keep installed Lutris games synchronized with the streaming library.",
         "description": "Discovers non-Steam games and launchers from your local Lutris library.",
         "excludedCount": "{count} excluded",
-        "exclusionsDescription": "Excluded games stay in Lutris but are not added to Vibepollo automatically.",
+        "exclusionsDescription": "Excluded games stay in Lutris but are not added to Mirage automatically.",
         "exclusionsTitle": "Excluded games",
         "filterGames": "Filter games",
         "gameCount": "{count} installed games",
@@ -762,7 +762,7 @@
         "description": "Provides virtual Xbox and DualShock controllers to streamed applications.",
         "name": "ViGEmBus",
         "shortDescription": "Virtual controller driver support.",
-        "supersededDescription": "Not in use: the Vibepollo virtual gamepad driver is providing virtual controllers. Install ViGEmBus only if you want the Xbox 360 or DualShock 4 options that depend on it."
+        "supersededDescription": "Not in use: the Mirage virtual gamepad driver is providing virtual controllers. Install ViGEmBus only if you want the Xbox 360 or DualShock 4 options that depend on it."
       },
       "vulkan": {
         "description": "Registers the implicit Vulkan layer used by virtual-display HDR workflows.",
@@ -977,11 +977,11 @@
         "deleteSnapshotTitle": "Delete the recovery snapshot?",
         "replaceSnapshotTitle": "Replace the recovery snapshot?",
         "restartDescription": "Active streams will disconnect and this interface will be unavailable while the service restarts.",
-        "restartTitle": "Restart Vibepollo?",
+        "restartTitle": "Restart Mirage?",
         "revokeSessionDescription": "That browser will need to sign in again before it can manage this host.",
         "revokeSessionTitle": "Revoke {browser}?",
-        "terminateVirtualDisplayDescription": "Vibepollo will disengage automatic recovery, try to restore the physical display layout, remove every managed virtual display, and stop display watchdogs. Active streams using a virtual display will lose video.",
-        "terminateVirtualDisplayLinuxDescription": "Vibepollo will cancel pending display recovery, try to restore the physical display layout, and disconnect every managed virtual display. Active streams using a virtual display will lose video. A host without a working physical display may go blank. New sessions can create virtual displays again.",
+        "terminateVirtualDisplayDescription": "Mirage will disengage automatic recovery, try to restore the physical display layout, remove every managed virtual display, and stop display watchdogs. Active streams using a virtual display will lose video.",
+        "terminateVirtualDisplayLinuxDescription": "Mirage will cancel pending display recovery, try to restore the physical display layout, and disconnect every managed virtual display. Active streams using a virtual display will lose video. A host without a working physical display may go blank. New sessions can create virtual displays again.",
         "terminateVirtualDisplayTitle": "Terminate every virtual display?"
       },
       "crash": {
@@ -1018,7 +1018,7 @@
         "crashAcknowledged": "The crash notice was acknowledged.",
         "crashBundleStarted": "Crash bundle downloads started. If your browser blocked multiple downloads, use the individual part buttons below.",
         "credentialsUpdated": "Web UI credentials were updated.",
-        "restartRequested": "Restart requested. Reconnect after the Vibepollo service comes back online.",
+        "restartRequested": "Restart requested. Reconnect after the Mirage service comes back online.",
         "sessionRevoked": "{browser} was revoked.",
         "snapshotCaptured": "The current display layout is now the recovery baseline.",
         "snapshotDeleted": "The display recovery snapshot was deleted.",
@@ -1031,7 +1031,7 @@
         "availableDetail": "A known-good display layout is available for recovery.",
         "lastFailure": "Last failure",
         "linuxTitle": "Virtual display recovery",
-        "linuxDescription": "Terminate managed virtual displays to recover from a display problem. Vibepollo will first try to restore the physical display layout.",
+        "linuxDescription": "Terminate managed virtual displays to recover from a display problem. Mirage will first try to restore the physical display layout.",
         "noneRecorded": "None recorded",
         "notCaptured": "Not captured",
         "notCapturedDetail": "No known-good display layout has been saved.",
@@ -1126,7 +1126,7 @@
       }
     },
     "updates": {
-      "available": "Vibepollo {version} is available"
+      "available": "Mirage {version} is available"
     },
     "nav": {
       "api_tokens": "API tokens",
@@ -1187,7 +1187,7 @@
       "input_unavailable": "Input forwarding is unavailable",
       "install": {
         "action": "Improve iPad fullscreen",
-        "description": "To remove Safari's address bar before opening fullscreen, tap Safari's Share button, choose Add to Home Screen, keep Open as Web App enabled, then launch Vibepollo from its Home Screen icon. Safari may still briefly show its own fullscreen exit control.",
+        "description": "To remove Safari's address bar before opening fullscreen, tap Safari's Share button, choose Add to Home Screen, keep Open as Web App enabled, then launch Mirage from its Home Screen icon. Safari may still briefly show its own fullscreen exit control.",
         "done": "Got it",
         "title": "Set up iPad fullscreen"
       },
@@ -1250,7 +1250,7 @@
     },
     "not_found": {
       "action": "Return to overview",
-      "description": "That Vibepollo page does not exist or may have moved.",
+      "description": "That Mirage page does not exist or may have moved.",
       "title": "Page not found"
     },
     "overview": {
@@ -1418,12 +1418,12 @@
         "local_approval": "Local approval",
         "title": "Pair a device"
       },
-      "privacy": "The PIN is sent only to this Vibepollo host over the current authenticated connection.",
+      "privacy": "The PIN is sent only to this Mirage host over the current authenticated connection.",
       "steps": {
         "approve_description": "Short PINs are submitted as four digits, including leading zeroes.",
         "approve_title": "Approve it here",
         "number": "{number}",
-        "open_moonlight_description": "Select this Vibepollo host from the Artemis client you want to authorize.",
+        "open_moonlight_description": "Select this Mirage host from the Artemis client you want to authorize.",
         "open_moonlight_title": "Open Artemis",
         "start_pairing_description": "Keep Artemis open while its numeric PIN is visible.",
         "start_pairing_title": "Start pairing",
@@ -1450,7 +1450,7 @@
         "app_running_title": "Application is still running",
         "history_degraded_description": "Live streams are unaffected, but new diagnostics may be incomplete.",
         "history_degraded_title": "Session history is degraded",
-        "partial_failure_description": "Existing rows remain visible while Vibepollo retries.",
+        "partial_failure_description": "Existing rows remain visible while Mirage retries.",
         "partial_failure_title": "Some session data is unavailable"
       },
       "confirm": {
@@ -1562,7 +1562,7 @@
           "label": "Displays"
         },
         "everyday": {
-          "description": "Set up Vibepollo's virtual screens, smoother game capture, Remote Monitor, and stream automation. Use the other categories for detailed tuning.",
+          "description": "Set up Mirage's virtual screens, smoother game capture, Remote Monitor, and stream automation. Use the other categories for detailed tuning.",
           "label": "Everyday setup"
         },
         "files": {
@@ -1616,7 +1616,7 @@
         "empty": "No expert values match this search.",
         "label": "Expert",
         "title": "Expert configuration",
-        "warning": "These values are passed directly to Vibepollo. Preserve their expected format.",
+        "warning": "These values are passed directly to Mirage. Preserve their expected format.",
         "warning_title": "Expert settings"
       },
       "fields": {
@@ -1630,7 +1630,7 @@
           "description": "Add only trusted HTTPS origins, separated by commas."
         },
         "dd_configuration_option": {
-          "description": "Choose how Vibepollo prepares the selected display before a stream."
+          "description": "Choose how Mirage prepares the selected display before a stream."
         },
         "dd_config_revert_on_disconnect": {
           "description": "Restore the physical desktop immediately instead of keeping the game and virtual screen available for reconnection.",
@@ -1660,11 +1660,11 @@
         "dd_paused_virtual_display_timeout_secs": {
           "description": "When a disconnected stream leaves its game running, keep the virtual display available for this long before removing it.",
           "label": "Keep a disconnected virtual display for",
-          "warning": "When this expires, Vibepollo removes the virtual display even if the game is still running. Some older games can crash when their display disappears. Close the game first or choose Until the game closes."
+          "warning": "When this expires, Mirage removes the virtual display even if the game is still running. Some older games can crash when their display disappears. Close the game first or choose Until the game closes."
         },
         "dd_refresh_rate_option": {
           "label": "Screen refresh rate",
-          "description": "Follow the requested stream FPS using Vibepollo’s display policy, preserve the host refresh rate, or set it manually."
+          "description": "Follow the requested stream FPS using Mirage’s display policy, preserve the host refresh rate, or set it manually."
         },
         "dd_resolution_option": {
           "label": "Screen resolution",
@@ -1679,7 +1679,7 @@
           "label": "@:config.virtual_display_scale_label"
         },
         "virtual_display_outputs": {
-          "description": "Optional comma-separated DRM connector names reserved for private streams. Leave empty to use the four-output managed pool. On Linux 7.1+, Vibepollo provides GPU-attached HDR10 and 10-bit output; HDR uses direct KMS capture, KWin is recommended for SDR, and managed display creation fails if the custom driver is unavailable.",
+          "description": "Optional comma-separated DRM connector names reserved for private streams. Leave empty to use the four-output managed pool. On Linux 7.1+, Mirage provides GPU-attached HDR10 and 10-bit output; HDR uses direct KMS capture, KWin is recommended for SDR, and managed display creation fails if the custom driver is unavailable.",
           "label": "Linux private display connectors"
         },
         "virtual_display_max_clients": {
@@ -1699,7 +1699,7 @@
           "label": "Remove it when the client disconnects"
         },
         "remote_monitor_terminate_on_first_request": {
-          "description": "Moonlight needs Vibepollo to advertise the host as available to extra clients so it can show the running game and Terminate control. Leave this off to require launching Terminate twice; the original game client is not affected.",
+          "description": "Moonlight needs Mirage to advertise the host as available to extra clients so it can show the running game and Terminate control. Leave this off to require launching Terminate twice; the original game client is not affected.",
           "label": "Terminate on the first request"
         },
         "remote_monitor_confirm_app_replacement": {
@@ -1719,7 +1719,7 @@
           "label": "Network recovery (FEC)"
         },
         "dd_use_sunshine_virtual_display_driver": {
-          "description": "Recommended. Uses Vibepollo's bundled driver for per-client and shared virtual screens. Turn this off only to fall back to SudoVDA.",
+          "description": "Recommended. Uses Mirage's bundled driver for per-client and shared virtual screens. Turn this off only to fall back to SudoVDA.",
           "label": "Use the Mirage Display Driver"
         },
         "frame_limiter_disable_vsync": {
@@ -1730,7 +1730,7 @@
           "label": "Always limit rendered frames"
         },
         "frame_limiter_auto_virtual_framegen": {
-          "description": "Windows only hands Vibepollo a new frame when it redraws the virtual screen. If the screen redraws only as often as your stream, a game frame that finishes just after a redraw waits up to a whole refresh before it's captured, so frames reach your device unevenly and motion stutters even at a steady FPS. A faster virtual screen captures each frame almost as soon as the game draws it: at 120 FPS a frame can wait up to 8.3 ms with Off, 4.2 ms with Compatibility (2×), 2.1 ms at 4×, and 1 ms at 1000 Hz. Stream FPS and bandwidth don't change, and games stay capped to the stream rate. Automatic uses 1000 Hz when your client asks for VRR (for example Moonlight with VRR pacing) and 4× otherwise; VRR always uses 1000 Hz.",
+          "description": "Windows only hands Mirage a new frame when it redraws the virtual screen. If the screen redraws only as often as your stream, a game frame that finishes just after a redraw waits up to a whole refresh before it's captured, so frames reach your device unevenly and motion stutters even at a steady FPS. A faster virtual screen captures each frame almost as soon as the game draws it: at 120 FPS a frame can wait up to 8.3 ms with Off, 4.2 ms with Compatibility (2×), 2.1 ms at 4×, and 1 ms at 1000 Hz. Stream FPS and bandwidth don't change, and games stay capped to the stream rate. Automatic uses 1000 Hz when your client asks for VRR (for example Moonlight with VRR pacing) and 4× otherwise; VRR always uses 1000 Hz.",
           "description_linux": "Automatic keeps the virtual display at 4× the requested stream rate and caps launched games to that rate with the selected Linux limiter. Compatibility uses a fixed 2× virtual-display rate.",
           "label": "Capture timing (virtual screen refresh)"
         },
@@ -1749,7 +1749,7 @@
           "label": "Lossless Scaling executable"
         },
         "output_name": {
-          "description": "Leave blank to let Vibepollo choose the display. Otherwise use an exact device name."
+          "description": "Leave blank to let Mirage choose the display. Otherwise use an exact device name."
         },
         "port": {
           "description": "Choose the base TCP and UDP port for Moonlight and the Web UI. WAN access exposes the Web UI to the internet."
@@ -1776,7 +1776,7 @@
           "label": "Enable KDE Wayland HDR compatibility"
         },
         "virtual_display_mode": {
-          "description": "Choose whether Vibepollo captures a physical monitor or creates a display sized for the client.",
+          "description": "Choose whether Mirage captures a physical monitor or creates a display sized for the client.",
           "label": "Streaming display"
         },
         "wgc_pacing_smoothing": {
@@ -1890,7 +1890,7 @@
         },
         "everyday_pyrowave": {
           "title": "PyroWave",
-          "description": "Vibepollo’s alternative to H.264, HEVC, and AV1."
+          "description": "Mirage’s alternative to H.264, HEVC, and AV1."
         },
         "everyday_encoding": {
           "description": "Use the preferred dedicated GPU automatically, then adjust only its relevant preset and stream recovery overhead.",
@@ -2016,20 +2016,20 @@
       },
       "loading": "Loading settings",
       "metadata_unavailable": {
-        "description": "Host-specific settings may be hidden until Vibepollo can report this system's platform and hardware.",
+        "description": "Host-specific settings may be hidden until Mirage can report this system's platform and hardware.",
         "title": "Some host details are unavailable"
       },
       "no_results": "No settings match “{query}”.",
       "network": {
         "listener_hint": "The base port determines the TCP and UDP listeners below. Keep the full range available through your firewall.",
-        "table_caption": "Vibepollo network listeners"
+        "table_caption": "Mirage network listeners"
       },
       "notices": {
         "display_state_cleared": "Saved display-device state was cleared.",
-        "restarting": "Vibepollo is restarting. This page will reconnect when the host is ready.",
+        "restarting": "Mirage is restarting. This page will reconnect when the host is ready.",
         "saved": "Configuration saved and applied.",
         "saved_deferred": "Saved. Changes will apply after the active stream ends.",
-        "saved_restart": "Saved. Restart Vibepollo to apply these changes.",
+        "saved_restart": "Saved. Restart Mirage to apply these changes.",
         "title": "Configuration updated"
       },
       "options": {
@@ -2246,7 +2246,7 @@
         "create_snapshot": "Create snapshot",
         "golden_title": "Golden recovery snapshot",
         "hotkey_configured": "Configured",
-        "hotkey_detail": "When Vibepollo runs in your Windows desktop session, use this shortcut to restore the session baseline, fall back to the golden layout when needed, remove virtual displays, and stop recovery. Service-mode installs may not receive desktop shortcuts.",
+        "hotkey_detail": "When Mirage runs in your Windows desktop session, use this shortcut to restore the session baseline, fall back to the golden layout when needed, remove virtual displays, and stop recovery. Service-mode installs may not receive desktop shortcuts.",
         "hotkey_invalid": "Use F1–F24, a letter, or a number as the main key.",
         "hotkey_modifier_required": "Include Ctrl, Alt, Shift, or Win so ordinary typing cannot trigger display recovery.",
         "hotkey_listening": "Listening — press the shortcut you want to use.",
@@ -2256,8 +2256,8 @@
         "hotkey_unsafe": "Needs a modifier",
         "hotkey_unsafe_detail": "This saved shortcut could trigger during ordinary typing. Add Ctrl, Alt, Shift, or Win, or replace it with the recommended shortcut.",
         "not_created": "Not created",
-        "not_created_detail": "Save the physical desktop layout Vibepollo should recover when normal session restoration is unavailable.",
-        "prefer_golden_detail": "Use this known-good layout first whenever Vibepollo restores the desktop. If it cannot be restored, Vibepollo falls back to the session snapshot.",
+        "not_created_detail": "Save the physical desktop layout Mirage should recover when normal session restoration is unavailable.",
+        "prefer_golden_detail": "Use this known-good layout first whenever Mirage restores the desktop. If it cannot be restored, Mirage falls back to the session snapshot.",
         "prefer_golden_title": "Restore this desktop by default",
         "prefer_golden_unavailable": "Create a recovery snapshot to make a known-good desktop layout the default. Session-based restoration remains available as the fallback.",
         "ready": "Ready",
@@ -2271,7 +2271,7 @@
         "snapshot_requested": "Snapshot capture was requested. The status will refresh after the display helper finishes.",
         "status_error": "The golden recovery snapshot status could not be loaded.",
         "unavailable": "Unavailable",
-        "unavailable_detail": "Vibepollo could not read the golden recovery snapshot status.",
+        "unavailable_detail": "Mirage could not read the golden recovery snapshot status.",
         "update_snapshot": "Update snapshot",
         "use_recommended_hotkey": "Use Ctrl + Alt + Shift + F12"
       },
@@ -2280,7 +2280,7 @@
       "restart": "Restart",
       "restart_now": "Restart now",
       "restart_required": "Restart required",
-      "restart_required_description": "One or more unsaved changes require a Vibepollo restart.",
+      "restart_required_description": "One or more unsaved changes require a Mirage restart.",
       "save": "Save changes",
       "save_hint": "Changes apply after saving.",
       "save_restart_hint": "A restart will be required.",
@@ -2344,11 +2344,11 @@
           },
           "uninitialized": {
             "title": "Driver has not been initialized",
-            "description": "The host has not initialized a virtual-display driver yet. Start a stream or restart Vibepollo, then check this status again."
+            "description": "The host has not initialized a virtual-display driver yet. Start a stream or restart Mirage, then check this status again."
           },
           "version_incompatible": {
             "title": "Driver version mismatch",
-            "description": "{driver} reported an incompatible protocol version. Repair or reinstall the driver to match this Vibepollo build."
+            "description": "{driver} reported an incompatible protocol version. Repair or reinstall the driver to match this Mirage build."
           },
           "watchdog_failed": {
             "title": "Driver watchdog failed",
@@ -2362,12 +2362,12 @@
         "configured": "Configured selection: {driver}",
         "observed": "Observed by host: {driver}",
         "observed_unknown": "Observed by host: no driver result yet",
-        "configured_mismatch": "Settings select {configured}, while the latest runtime observation was {observed}. Save the selection and restart Vibepollo before relying on its status.",
+        "configured_mismatch": "Settings select {configured}, while the latest runtime observation was {observed}. Save the selection and restart Mirage before relying on its status.",
         "status_code": "Runtime status code: {code}",
         "refresh": "Refresh status",
         "refreshing": "Refreshing status",
         "dummy_plug_title": "The Disable VSYNC override is required for the dummy-plug HDR workaround",
-        "dummy_plug_description": "While this workaround is enabled, Vibepollo forces the Disable VSYNC override on and locks it. Disabling the workaround leaves your saved VSYNC choice unchanged.",
+        "dummy_plug_description": "While this workaround is enabled, Mirage forces the Disable VSYNC override on and locks it. Disabling the workaround leaves your saved VSYNC choice unchanged.",
         "vsync_forced": "Required by the active physical dummy-plug HDR workaround. The Disable VSYNC override is shown as enabled and cannot be changed until the workaround is disabled.",
         "next_step": "Select a driver in Display settings, save, and start a stream to produce a fresh runtime check."
       },
@@ -2418,7 +2418,7 @@
         "array": "Enter a JSON array; leave empty to use the default."
       },
       "everyday_help": {
-        "pyrowave": "Use Vibepollo’s GPU wavelet codec with a compatible client. Requires a compatible GPU and a fast wired network.",
+        "pyrowave": "Use Mirage’s GPU wavelet codec with a compatible client. Requires a compatible GPU and a fast wired network.",
         "frame_limiter_auto_virtual_framegen": "Automatic and Compatibility use a faster virtual-screen refresh rate. Off follows the stream frame rate. Your stream frame rate stays the same.",
         "dd_virtual_display_scale": "Change the size of text and controls on your virtual screen.",
         "wayland_hdr_compatibility": "Use compatibility handling for HDR games on the managed Wayland display."
@@ -2516,7 +2516,7 @@
       "reveal": {
         "description": "This credential is displayed only after creation.",
         "title": "Your API token is ready",
-        "warning": "Copy this token now. Vibepollo stores only a hash and cannot show the full token again.",
+        "warning": "Copy this token now. Mirage stores only a hash and cannot show the full token again.",
         "warning_title": "Save it securely"
       },
       "revoke": {
@@ -2529,7 +2529,7 @@
     },
     "shell": {
       "appearance": "Appearance",
-      "brand_overview": "Vibepollo overview",
+      "brand_overview": "Mirage overview",
       "change_theme": "Theme: {theme}. Change theme",
       "close_navigation": "Close navigation",
       "collapse_navigation": "Collapse navigation",
@@ -2555,7 +2555,7 @@
     },
     "system": {
       "host_status_unavailable": "Host status is temporarily unavailable.",
-      "unreachable": "Unable to reach Vibepollo."
+      "unreachable": "Unable to reach Mirage."
     }
   },
   "sessions": {

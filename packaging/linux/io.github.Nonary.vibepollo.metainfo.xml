@@ -2,7 +2,7 @@
 <component type="desktop">
   <id>@PROJECT_FQDN@</id>
 
-  <name>@PROJECT_NAME@</name>
+  <name>@PROJECT_DISPLAY_NAME@</name>
   <summary>@PROJECT_BRIEF_DESCRIPTION@</summary>
 
   <metadata_license>CC0-1.0</metadata_license>
