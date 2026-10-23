@@ -438,7 +438,7 @@
         "display_override": "Use a client-specific display route",
         "hdr_description": "Apply HDR calibration and virtual-display presentation settings for this client.",
         "hdr_peak_description": "Set a manual peak brightness for this client's virtual display and HDR stream, or leave it automatic.",
-        "hdr_profile_description": "The Vibeshine virtual display driver retains Windows HDR calibration profiles automatically. Select an override here only for physical displays or other virtual display drivers.",
+        "hdr_profile_description": "The Mirage display driver retains Windows HDR calibration profiles automatically. Select an override here only for physical displays or other virtual display drivers.",
         "name_helper": "Use a name that identifies the person or screen using this client.",
         "no_displays": "No displays were reported by this host",
         "no_hdr_profiles": "No installed HDR color profiles",
@@ -1720,7 +1720,7 @@
         },
         "dd_use_sunshine_virtual_display_driver": {
           "description": "Recommended. Uses Vibepollo's bundled driver for per-client and shared virtual screens. Turn this off only to fall back to SudoVDA.",
-          "label": "Use the Vibepollo Display Driver"
+          "label": "Use the Mirage Display Driver"
         },
         "frame_limiter_disable_vsync": {
           "description": "Controls the manual limiter. Automatic virtual-screen game smoothness temporarily disables VSYNC while its pacing policy is active."

@@ -1915,7 +1915,7 @@ back to a physical output, the virtual-only promotion is not applied.
     <tr>
         <td>Description</td>
         <td colspan="2">
-            When enabled, Vibepollo uses the Vibepollo Display Driver for virtual display streams. Disable this to switch back to the bundled SudoVDA rollback driver.
+            When enabled, Vibepollo uses the Mirage Display Driver for virtual display streams. Disable this to switch back to the bundled SudoVDA rollback driver.
             @note{Applies to Windows only.}
         </td>
     </tr>
