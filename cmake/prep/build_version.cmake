@@ -28,7 +28,7 @@ endif()
 # Cache variables can be provided via -DSUNSHINE_REPO_OWNER=... or -DSUNSHINE_REPO_NAME=...
 # Mirage announces only its own releases, not upstream Vibepollo ones.
 set(SUNSHINE_REPO_OWNER "Flybery" CACHE STRING "GitHub repo owner for update checks")
-set(SUNSHINE_REPO_NAME "Vibepollo" CACHE STRING "GitHub repo name for update checks")
+set(SUNSHINE_REPO_NAME "Mirage" CACHE STRING "GitHub repo name for update checks")
 
 # Allow environment variables to override the cache values (useful in CI)
 if(DEFINED ENV{SUNSHINE_REPO_OWNER})
@@ -39,7 +39,7 @@ if(DEFINED ENV{SUNSHINE_REPO_NAME})
 endif()
 
 # Try to infer owner/name from the clone URL when available and the defaults are still in use
-if(DEFINED GITHUB_CLONE_URL AND (SUNSHINE_REPO_OWNER STREQUAL "Flybery" OR SUNSHINE_REPO_NAME STREQUAL "Vibepollo"))
+if(DEFINED GITHUB_CLONE_URL AND (SUNSHINE_REPO_OWNER STREQUAL "Flybery" OR SUNSHINE_REPO_NAME STREQUAL "Mirage"))
     string(REGEX MATCH "github.com[:/]+([^/]+)/([^/]+)(\\.git)?$" _match "${GITHUB_CLONE_URL}")
     if(_match)
         set(SUNSHINE_REPO_OWNER "${CMAKE_MATCH_1}")

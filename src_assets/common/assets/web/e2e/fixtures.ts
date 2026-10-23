@@ -47,7 +47,7 @@ export const test = base.extend<{ updaterNetworkAudit: UpdaterNetworkAudit }>({
     const localOrigins = testOrigins(testInfo.project.use.baseURL);
     const releaseRequest = (url: URL) => url.protocol === 'https:' &&
       url.hostname === 'api.github.com' &&
-      url.pathname.toLowerCase() === '/repos/flybery/vibepollo/releases';
+      url.pathname.toLowerCase() === '/repos/flybery/mirage/releases';
     context.on('request', (request) => {
       const url = new URL(request.url());
       if (/^https?:$/.test(url.protocol) && !localOrigins.has(url.origin))

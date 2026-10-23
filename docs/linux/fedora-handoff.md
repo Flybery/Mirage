@@ -1,6 +1,6 @@
 # Fedora port: status and handoff notes
 
-Working notes for the Fedora port on branch `fedora-support` of `https://github.com/Flybery/Vibepollo`.
+Working notes for the Fedora port on branch `fedora-support` of `https://github.com/Flybery/Mirage`.
 The user-facing guide is [fedora.md](fedora.md).
 
 ## Known-good state (tag `fedora-gnome-good-2026-10-21`)
