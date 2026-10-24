@@ -46,7 +46,7 @@ UNITS = (HOST, CONTROLLER, SOCKET, 'vibepollo-session-exec@.service',
          'vibeshine-drm-setup.service', 'vibeshine-vkms.service',
          'vibeshine-vkms-control.socket', 'vibeshine-vkms-control@.service')
 FIXED = {
-    'usr/bin/vibepollo', 'usr/bin/vibepollo-mangohud',
+    'usr/bin/vibepollo', 'usr/bin/vibepollo-mangohud', 'usr/bin/vibepollo-open',
     'usr/lib/libvibeshine-kwin-gpu.so',
     'usr/lib/modules-load.d/60-sunshine.conf',
     'usr/lib/modules-load.d/70-vibeshine-ds5.conf',

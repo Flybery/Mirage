@@ -8448,6 +8448,7 @@ fi
 # /usr/bin/vibepollo is a symlink to the versioned executable.
 %{_bindir}/vibepollo-[0-9]*
 %{_bindir}/vibepollo-mangohud
+%{_bindir}/vibepollo-open
 %{_prefix}/libexec/vibeshine/vibeshine-drm-install
 %{_prefix}/libexec/vibeshine/vibeshine-ds5-install
 %{_prefix}/libexec/vibeshine/vibeshine-vkms

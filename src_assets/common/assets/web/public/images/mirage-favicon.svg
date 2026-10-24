@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="73 76 214 214" width="214" height="214">
+  <title>Mirage</title>
+  <style>.sun{fill:#F3F1EE}@media (prefers-color-scheme: light){.sun{fill:#141519}}</style>
+  <path class="sun" d="M98 164A82 82 0 0 1 262 164Z"/>
+  <polygon class="sun" points="103,169 267,169 265,184 105,184"/>
+  <polygon class="sun" points="92,189 249,189 244,202 97.5,202"/>
+  <polygon class="sun" points="125,208 263,208 255.5,218.3 131.5,218.3"/>
+  <polygon class="sun" points="106,225.2 216,225.2 206.5,233 115.5,233"/>
+  <polygon class="sun" points="172,240 235,240 216,246 190,246"/>
+  <polygon fill="#8E8D8E" points="121,256 200,256 207,261 114,261"/>
+  <polygon fill="#696A6A" points="137,269 251,269 254,273 134,273"/>
+  <polygon fill="#464549" points="104,281 238,281 239,284 102,284"/>
+</svg>

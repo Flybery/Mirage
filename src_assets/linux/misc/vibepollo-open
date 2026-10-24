@@ -1,0 +1,16 @@
+#!/bin/sh
+# Application-menu launcher. The GNOME desktop mode runs as a user service, so
+# opening it means opening its web panel; other modes start their app unit.
+set -u
+
+case ":${XDG_CURRENT_DESKTOP-}:" in
+  *:GNOME:*)
+    systemctl --user start vibepollo-gnome.service >/dev/null 2>&1 || true
+    config="${XDG_CONFIG_HOME:-$HOME/.config}/vibepollo/vibepollo.conf"
+    port=$(sed -n 's/^[[:space:]]*port[[:space:]]*=[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p' "$config" 2>/dev/null | tail -n 1)
+    # The web panel listens one port above the configured base port.
+    exec xdg-open "https://localhost:$(( ${port:-47989} + 1 ))/"
+    ;;
+esac
+
+exec systemctl start --user app-io.github.Nonary.vibepollo

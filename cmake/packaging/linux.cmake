@@ -36,6 +36,8 @@ file(CREATE_LINK "${SUNSHINE_SOURCE_ASSETS_DIR}/linux/assets/shaders"
 
 install(PROGRAMS "${SUNSHINE_SOURCE_ASSETS_DIR}/linux/misc/vibepollo-mangohud"
         DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(PROGRAMS "${SUNSHINE_SOURCE_ASSETS_DIR}/linux/misc/vibepollo-open"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 if(SUNSHINE_BUILD_STEAMOS)
     # Transitive application dependencies also resolve from the bundle. Keep
