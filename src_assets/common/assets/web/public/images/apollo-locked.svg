@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" width="360" height="360">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="73 76 214 214" width="214" height="214">
   <title>Mirage</title>
-  <rect x="0" y="0" width="360" height="360" fill="#141519"/>
   <path fill="#5C5A57" d="M98 164A82 82 0 0 1 262 164Z"/>
   <polygon fill="#5C5A57" points="103,169 267,169 265,184 105,184"/>
   <polygon fill="#5C5A57" points="92,189 249,189 244,202 97.5,202"/>

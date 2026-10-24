@@ -1,5 +1,5 @@
 [Unit]
-Description=Vibepollo game stream host (GNOME desktop)
+Description=Mirage game stream host (GNOME desktop)
 Documentation=https://github.com/Nonary/Vibepollo/blob/master/docs/linux/fedora.md
 # Streams the user's existing GNOME desktop through the ScreenCast portal.
 # Plasma sessions are served by the machine-wide vibepollo-session-controller.

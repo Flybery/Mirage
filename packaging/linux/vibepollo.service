@@ -1,5 +1,5 @@
 [Unit]
-Description=Vibepollo machine streaming host
+Description=Mirage machine streaming host
 Documentation=https://github.com/Nonary/Vibepollo
 # The controller owns ordered cleanup through ExecStopPost. Binding this unit
 # directly to the controller would queue a concurrent stop and bypass that

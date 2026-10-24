@@ -1,5 +1,5 @@
 [Unit]
-Description=Vibepollo session execution broker connection
+Description=Mirage session execution broker connection
 Documentation=https://github.com/Nonary/Vibepollo
 After=vibepollo-session-controller.service
 # The host's synchronous session client is part of its cgroup. Stop the host

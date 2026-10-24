@@ -1,5 +1,5 @@
 [Unit]
-Description=Vibepollo machine session controller
+Description=Mirage machine session controller
 Documentation=https://github.com/Nonary/Vibepollo
 Wants=display-manager.service systemd-logind.service systemd-user-sessions.service vibeshine-vkms.service
 After=display-manager.service systemd-logind.service systemd-user-sessions.service vibeshine-vkms.service

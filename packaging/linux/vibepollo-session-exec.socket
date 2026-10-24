@@ -1,5 +1,5 @@
 [Unit]
-Description=Vibepollo session execution broker socket
+Description=Mirage session execution broker socket
 Documentation=https://github.com/Nonary/Vibepollo
 After=vibepollo-session-controller.service
 # Keep admission alive until the GPU host has drained every already-accepted
