@@ -19,6 +19,29 @@ sudo bash linux_install.sh
 Then open **https://localhost:47990**, create your login and pair Moonlight. Mirage ships Linux
 packages only; on Windows, use Vibepollo itself.
 
+## How the Mirage virtual display works
+
+Vibepollo creates virtual displays on Linux with its own kernel driver and KDE Plasma. On GNOME,
+Mirage needs no extra driver: it asks GNOME itself for the screen.
+
+1. **A new monitor per device.** When Moonlight connects, Mirage opens a screen-cast session
+   through the desktop portal (`xdg-desktop-portal`) and requests a *virtual* source instead of
+   an existing monitor. GNOME's compositor, Mutter, then creates a real extra monitor (it appears
+   as `Meta-0`, `Meta-1`, …). Its size and refresh rate come from the video stream Mirage
+   negotiates, so it matches the client exactly, for example 2266×1488 at 60 Hz for an iPad mini.
+2. **Arranging the desktop.** As soon as the new monitor shows up, Mirage arranges it through
+   GNOME's display configuration interface (`org.gnome.Mutter.DisplayConfig`). The change is
+   temporary, so GNOME discards it when the stream ends. Depending on the setting, the virtual
+   monitor becomes the only screen, extends the desktop, or extends it and becomes the primary
+   screen.
+3. **Laptop panel off.** In "virtual display only" mode GNOME would keep the built-in panel lit
+   showing a frozen image, so Mirage dims its backlight to zero through `systemd-logind` and
+   restores the previous brightness after the stream, even after a crash or reboot.
+4. **Capture and encoding.** Mirage receives the virtual monitor's picture through PipeWire and
+   encodes it on the GPU (VA-API on Intel and AMD).
+
+GNOME asks once whether Mirage may share the screen; after that, the permission is remembered.
+
 The rest of this page is Vibepollo's own description, which Mirage builds on.
 
 ---
