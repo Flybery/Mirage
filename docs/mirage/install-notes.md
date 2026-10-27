@@ -1,7 +1,10 @@
-## Install
+Mirage streams your Linux GNOME desktop to Moonlight on an iPad, phone, TV or PC.
+Each device gets its own Mirage virtual display at its exact resolution, and the
+laptop panel switches off while you stream. Mirage is a fork of
+[Vibepollo](https://github.com/Nonary/Vibepollo) (itself based on Apollo and
+Sunshine), focused on Fedora Workstation with GNOME.
 
-Mirage streams your Linux desktop to Moonlight on an iPad, phone, TV or PC. Each
-device gets its own Mirage virtual display at its exact resolution.
+## Install
 
 ### Fedora 43 and 44 (GNOME, x86_64)
 
