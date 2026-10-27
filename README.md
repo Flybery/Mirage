@@ -1,3 +1,28 @@
+# Mirage
+
+Mirage is a fork of [Vibepollo](https://github.com/Nonary/Vibepollo) for the **Linux GNOME
+desktop**, developed and tested on Fedora Workstation. It streams your normal GNOME session to
+Moonlight on an iPad, phone, TV or PC. Each device gets its own **Mirage virtual display** at
+its exact resolution, and the laptop panel switches off while you stream and comes back afterwards.
+
+## Download
+
+Packages for **Fedora 43 and 44** and **Arch Linux** are on the
+[releases page](https://github.com/Flybery/Mirage/releases). Install with the script from the
+newest release:
+
+```bash
+curl -fsSLO https://github.com/Flybery/Mirage/releases/latest/download/linux_install.sh
+sudo bash linux_install.sh
+```
+
+Then open **https://localhost:47990**, create your login and pair Moonlight. Mirage ships Linux
+packages only; on Windows, use Vibepollo itself.
+
+The rest of this page is Vibepollo's own description, which Mirage builds on.
+
+---
+
 # Vibepollo
 
 ## What is Vibepollo?

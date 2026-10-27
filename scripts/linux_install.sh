@@ -8,8 +8,9 @@
 #   1. checks the machine against the documented requirements,
 #   2. on Fedora, offers RPM Fusion and the GPU's hardware-encoding drivers,
 #   3. installs the kernel headers the virtual-display driver needs,
-#   4. installs the Vibepollo package from the signed Nonary repository, or
-#      from the newest GitHub release when the repository is unavailable,
+#   4. installs the newest Mirage package from the Flybery/Mirage GitHub releases
+#      (the signed Nonary pacman repository ships upstream Vibepollo, so Mirage
+#      uses it only with --repo),
 #   5. opens the firewall (firewalld or ufw) when one is active, and
 #   6. prints whether a reboot is required and what to do next.
 #
@@ -21,7 +22,9 @@
 #   --package FILE        Install a local vibepollo-*.pkg.tar.zst (Arch) or
 #                         vibepollo-*.rpm (Fedora) instead of downloading.
 #   --stable              Ignore pre-releases when picking the newest GitHub release.
-#   --no-repo             Skip the signed pacman repository and use GitHub releases.
+#   --repo                Arch: install upstream Vibepollo from the signed Nonary
+#                         pacman repository instead of Mirage.
+#   --no-repo             Use GitHub releases (the default).
 #   --no-codecs           Fedora: do not offer RPM Fusion or GPU encoding drivers.
 #   --skip-checks         Continue past failed requirement checks (not recommended).
 #   --yes                 Answer yes to pacman/dnf prompts.
@@ -37,8 +40,8 @@ set -euo pipefail
 # Requirement and package-ownership checks parse command output.
 export LC_ALL=C
 
-readonly REPO_OWNER='Nonary'
-readonly REPO_NAME='Vibepollo'
+readonly REPO_OWNER='Flybery'
+readonly REPO_NAME='Mirage'
 readonly REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
 readonly API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}"
 readonly PACMAN_REPO_NAME='vibepollo'
@@ -55,7 +58,7 @@ readonly SESSION_CONTROLLER='/usr/libexec/vibeshine/vibepollo-session-controller
 requested_version=''
 local_package=''
 allow_prerelease=1
-use_repo=1
+use_repo=0
 skip_checks=0
 pacman_confirm=()
 replacement_confirm=()
@@ -365,6 +368,7 @@ parse_args() {
         shift 2
         ;;
       --stable) allow_prerelease=0; shift ;;
+      --repo) use_repo=1; shift ;;
       --no-repo) use_repo=0; shift ;;
       --no-codecs) install_codecs=0; shift ;;
       --skip-checks) skip_checks=1; shift ;;

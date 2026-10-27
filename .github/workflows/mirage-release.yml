@@ -1,0 +1,135 @@
+---
+# Builds the Linux packages for a Mirage version tag (for example 2.1.0) on
+# GitHub-hosted runners and prepares a draft release with them. Publishing the
+# draft stays a manual step on GitHub.
+name: Mirage release
+permissions: {}
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  # A manual run must be started from the tag ("Use workflow from" -> Tags), because
+  # the reusable package workflows build the commit the run was started on.
+  workflow_dispatch:
+
+concurrency:
+  group: mirage-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Version
+    if: github.repository == 'Flybery/Mirage'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      commit: ${{ steps.version.outputs.commit }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve the tag
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          [[ "$REF_TYPE" == tag ]] || { echo "::error::Start this workflow from a version tag, not a branch."; exit 1; }
+          [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Mirage tags are plain versions like 2.1.0, got '$TAG'."; exit 1; }
+          commit=$(git rev-list -n 1 "refs/tags/$TAG") || { echo "::error::Tag $TAG does not exist."; exit 1; }
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+  fedora:
+    name: Fedora
+    needs: version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-fedora.yml
+    with:
+      release_version: ${{ needs.version.outputs.tag }}
+
+  archlinux:
+    name: Arch Linux
+    needs: version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-archlinux.yml
+    with:
+      artifact_retention_days: 7
+      release_commit: ${{ needs.version.outputs.commit }}
+      release_version: ${{ needs.version.outputs.tag }}
+
+  release:
+    name: Draft release
+    needs: [version, fedora, archlinux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ needs.version.outputs.commit }}
+          persist-credentials: false
+
+      - name: Download the Fedora packages
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          pattern: vibepollo-fedora-*
+          path: downloads/fedora
+          merge-multiple: true
+
+      - name: Download the Arch package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          name: build-Archlinux
+          path: downloads/arch
+
+      - name: Collect the release assets
+        run: |
+          mkdir assets
+          # Only the installable packages; debug info and source packages stay out.
+          find downloads/fedora -name "vibepollo-${TAG}-*.fc*.x86_64.rpm" \
+            ! -name '*debuginfo*' ! -name '*debugsource*' -exec cp {} assets/ \;
+          find downloads/arch -name "vibepollo-${TAG}-*-x86_64.pkg.tar.zst" ! -name '*-debug-*' -exec cp {} assets/ \;
+          cp scripts/linux_install.sh assets/
+          for fedora in 43 44; do
+            ls assets/*.fc${fedora}.x86_64.rpm >/dev/null || { echo "::error::No Fedora ${fedora} RPM was built."; exit 1; }
+          done
+          ls assets/*.pkg.tar.zst >/dev/null || { echo "::error::No Arch package was built."; exit 1; }
+          (cd assets && sha256sum -- * > SHA256SUMS)
+          ls -la assets
+          cat assets/SHA256SUMS
+
+      - name: Write the release notes
+        run: |
+          notes_file="docs/mirage/releases/${TAG}.md"
+          {
+            if [[ -f "$notes_file" ]]; then
+              cat "$notes_file"
+              echo
+            fi
+            sed "s/@VERSION@/${TAG}/g" docs/mirage/install-notes.md
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Create the draft release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+            gh release edit "$TAG" --notes-file release-notes.md
+          else
+            gh release create "$TAG" assets/* --draft --verify-tag \
+              --title "Mirage ${TAG}" --notes-file release-notes.md
+          fi
