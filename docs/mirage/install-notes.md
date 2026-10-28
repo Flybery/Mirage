@@ -1,6 +1,8 @@
 Mirage streams your Linux GNOME desktop to Moonlight on an iPad, phone, TV or PC.
 Each device gets its own Mirage virtual display at its exact resolution, and the
-laptop panel switches off while you stream. Mirage is a fork of
+laptop panel switches off while you stream. The same virtual display also works as a
+second monitor (remote monitor): set the layout to *Extended* and the device becomes an
+extra screen next to the laptop's own. Mirage is a fork of
 [Vibepollo](https://github.com/Nonary/Vibepollo) (itself based on Apollo and
 Sunshine), focused on Fedora Workstation with GNOME.
 

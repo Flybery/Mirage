@@ -5,6 +5,17 @@ desktop**, developed and tested on Fedora Workstation. It streams your normal GN
 Moonlight on an iPad, phone, TV or PC. Each device gets its own **Mirage virtual display** at
 its exact resolution, and the laptop panel switches off while you stream and comes back afterwards.
 
+## Two ways to use it
+
+- **Desktop streaming.** The device shows your whole GNOME desktop, as if you sat in front of the
+  laptop. The laptop panel goes dark while you stream.
+- **Second display (remote monitor).** The device becomes an extra screen next to the laptop's
+  own, like a wired monitor: drag windows onto your iPad or another laptop and keep working on
+  both. This uses the same Mirage virtual display, so there is nothing extra to install.
+
+You choose between them in the web UI under **Virtual Display Layout**: *Exclusive* for desktop
+streaming, *Extended* or *Extended + Primary* for a second display.
+
 ## Download
 
 Packages for **Fedora 43 and 44** and **Arch Linux** are on the
